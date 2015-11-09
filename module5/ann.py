@@ -1,6 +1,11 @@
+# -*- encoding: utf-8 -*-
+
+
 class HiddenLayer(object):
 
     def __init__(self):
+        pass
+
 
 class ANN(object):
 
@@ -20,4 +25,5 @@ class ANN(object):
         [7,3,3,8,2]
         :return:
         """
+
         pass
