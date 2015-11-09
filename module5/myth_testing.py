@@ -3,6 +3,7 @@
 # Created by 'myth' on 11/9/15
 
 import os
+import time
 
 import theano
 from theano import tensor as T
@@ -16,6 +17,7 @@ srng = RandomStreams()
 TRAIN_MAX = 60000
 TEST_MAX = 10000
 TRAIN_BATCH_SIZE = 512
+LEARNING_RATE = 0.001
 
 # KOK
 
@@ -29,44 +31,6 @@ def one_hot(x, n):
     o_h = np.zeros((len(x), n))
     o_h[np.arange(len(x)), x] = 1
     return o_h
-
-
-def mnist(ntrain=100, ntest=10, onehot=False):
-    data_dir = os.path.join(datasets_dir, 'mnist/')
-    fd = open(os.path.join(data_dir, 'train-images.idx3-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    tr_x = loaded[16:].reshape((60000, 28*28)).astype(float)
-
-    fd = open(os.path.join(data_dir, 'train-labels.idx1-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    tr_y = loaded[8:].reshape((60000,))
-
-    fd = open(os.path.join(data_dir, 't10k-images.idx3-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    te_x = loaded[16:].reshape((10000, 28*28)).astype(float)
-
-    fd = open(os.path.join(data_dir, 't10k-labels.idx1-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    te_y = loaded[8:].reshape((10000,))
-
-    tr_x /= 255.
-    te_x /= 255.
-
-    tr_x = tr_x[:ntrain]
-    tr_y = tr_y[:ntrain]
-
-    te_x = te_x[:ntest]
-    te_y = te_y[:ntest]
-
-    if onehot:
-        tr_y = one_hot(tr_y, 10)
-        te_y = one_hot(te_y, 10)
-    else:
-        tr_y = np.asarray(tr_y)
-        te_y = np.asarray(te_y)
-
-    return tr_x, te_x, tr_y, te_y
-
 
 # END KOK
 
@@ -130,15 +94,8 @@ def debug():
 
     images, labels = load_all_flat_cases()
 
-    # debug_tr_x, debug_te_x, debug_tr_y, debug_te_y = mnist()
-
-    # print(debug_tr_x)
-    # print(debug_tr_y)
-    # print(debug_te_x)
-    # print(debug_te_y)
-
-    tr_x = np.array(images).astype(float)[:TRAIN_MAX]
-    te_x = np.array(images).astype(float)[:TEST_MAX]
+    tr_x = np.array(images).astype(float)[:TRAIN_MAX] / 255.
+    te_x = np.array(images).astype(float)[:TEST_MAX] / 255.
     tr_y = one_hot(labels[:TRAIN_MAX], 10)
     te_y = one_hot(labels[:TEST_MAX], 10)
 
@@ -147,8 +104,8 @@ def debug():
 
     print('Initializing weights')
 
-    w_h = init_weights((784, 625))
-    w_h2 = init_weights((625, 625))
+    w_h = init_weights((784, 784))
+    w_h2 = init_weights((784, 625))
     w_o = init_weights((625, 10))
 
     print('Building model')
@@ -159,7 +116,7 @@ def debug():
 
     cost = T.mean(T.nnet.categorical_crossentropy(noise_py_x, labels_matrix))
     params = [w_h, w_h2, w_o]
-    updates = rms_prop(cost, params, lr=0.002)
+    updates = rms_prop(cost, params, lr=LEARNING_RATE)
 
     train = theano.function(
         inputs=[images_matrix, labels_matrix],
@@ -179,3 +136,5 @@ def debug():
         # for j, img in enumerate(te_x):
         #     print('Predicted: %.4f Actual: %.2f' % (float(np.argmax([te_y[j]], axis=1)), predict([img])))
         print('Correctness: %.4f' % np.average(np.argmax(te_y, axis=1) == predict(te_x)))
+
+    print('Correctness: %.4f' % np.average(np.argmax(te_y[3572:5873], axis=1) == predict(te_x[3572:5873])))
