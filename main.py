@@ -43,12 +43,13 @@ if __name__ == "__main__":
     # Set up logging
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
-    log.addHandler(logging.StreamHandler())
 
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [784, 620, 100, 10]
+    layer_structure = [784, 784, 620, 10]
 
     # Create a network using the default parameters
     a = ANN(layer_structure)
+    a.train(runs=50)
+    # a.predict(some_784_element_long_flat_image_vector)
