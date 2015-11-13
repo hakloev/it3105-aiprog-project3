@@ -19,20 +19,17 @@ TEST_MAX = 10000
 TRAIN_BATCH_SIZE = 512
 LEARNING_RATE = 0.001
 
-# KOK
+
+def vectorize_labels(labels, num_categories):
+    if type(labels) == list:
+        labels = np.array(labels)
+    labels = labels.flatten()
+    label_vector = np.zeros((len(labels), num_categories))
+    label_vector[np.arange(len(labels)), labels] = 1
+
+    return label_vector
 
 datasets_dir = 'module5'
-
-
-def one_hot(x, n):
-    if type(x) == list:
-        x = np.array(x)
-    x = x.flatten()
-    o_h = np.zeros((len(x), n))
-    o_h[np.arange(len(x)), x] = 1
-    return o_h
-
-# END KOK
 
 
 def float_x(x):
@@ -96,8 +93,8 @@ def debug():
 
     tr_x = np.array(images).astype(float)[:TRAIN_MAX] / 255.
     te_x = np.array(images).astype(float)[:TEST_MAX] / 255.
-    tr_y = one_hot(labels[:TRAIN_MAX], 10)
-    te_y = one_hot(labels[:TEST_MAX], 10)
+    tr_y = vectorize_labels(labels[:TRAIN_MAX], 10)
+    te_y = vectorize_labels(labels[:TEST_MAX], 10)
 
     images_matrix = T.fmatrix()
     labels_matrix = T.fmatrix()
