@@ -86,6 +86,15 @@ def relu(x):
     return x * (x > 0)
 
 
+def sigmoid(x):
+    """
+    Performs the sigmoid function on the value x
+    :param x:  The summed, weighted input of a neuron
+    :return: The output of the sigmoid function applied to the activation
+    """
+    return tensor.nnet.sigmoid(x)
+
+
 def softmax(x):
     """
     Performs the softmax function on the value x
@@ -277,10 +286,11 @@ class ANN(object):
         # Set up the output vector function
         output_function = tensor.argmax(regular_output, axis=1)
         # Set error correction function as crossentropy
-        cost = tensor.mean(tensor.nnet.categorical_crossentropy(noise_output, self._label_matrix))
+        #cost = tensor.mean(tensor.nnet.categorical_crossentropy(regular_output, self._label_matrix))
+        cost = tensor.sum(pow((self._label_matrix - layers[-1]), 2))
         params = weight_matrix
         # Updatefunction is backpropagaction algorithm using the specified error correction function
-        updates = default_backprop_updates(cost, params, lr=self._config['learning_rate'])
+        updates = rms_prop(cost, params, lr=self._config['learning_rate'])
 
         # Inject the training function that is used by self.train(*args)
         self._train = theano.function(

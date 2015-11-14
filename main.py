@@ -3,10 +3,9 @@
 import logging
 from logging.config import dictConfig
 
-from theano.tensor.nnet import sigmoid
-
 from module5.mnist import mnist_basics
-from module5.ann import ANN, rectify, softmax, relu
+from module5.ann import ANN, rectify, softmax, relu, sigmoid
+
 
 LOG_CONFIG = {
     'version': 1,
@@ -52,10 +51,10 @@ if __name__ == "__main__":
     # Example: [784, 620, 100, 10]
     layer_structure = [784, 620, 10]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, sigmoid]
+    activation_functions = [sigmoid, sigmoid, sigmoid]
 
     # Create a network using the default parameters
-    a = ANN(layer_structure, activation_functions)
+    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.01, 'noise_dropout_input': 0.0, 'noise_dropout_hidden': 0.0})
     a.load_input_data()
 
     train_data_cache = a.train_input_data
@@ -64,12 +63,13 @@ if __name__ == "__main__":
     test_labels_cache = a.test_correct_labels
 
     # Train a bit and perform blind test
-    a.train(epochs=5)
+    a.train(epochs=10)
     feature_sets, labels = mnist_basics.load_all_flat_cases(type="testing")
     print(a.blind_test(feature_sets[:10]))
 
     # MULTIPLE NETWORK GENERATION AND TESTING
 
+    """
     # Create new net
     layer_structure = [784, 620, 10]
     activation_functions = [relu, relu, softmax]
@@ -138,6 +138,7 @@ if __name__ == "__main__":
     # Create new net
     layer_structure = [784, 620, 10]
     activation_functions = [relu, relu, softmax]
+
     a = ANN(layer_structure, activation_functions)
 
     a.train_input_data = train_data_cache
@@ -147,4 +148,4 @@ if __name__ == "__main__":
 
     # Train current net
     a.train(epochs=10)
-
+    """
