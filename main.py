@@ -3,8 +3,7 @@
 import logging
 from logging.config import dictConfig
 
-from module5.ann import ANN
-from module5.myth_testing import debug
+from module5.ann import ANN, rectify, softmax
 
 LOG_CONFIG = {
     'version': 1,
@@ -49,10 +48,10 @@ if __name__ == "__main__":
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
     layer_structure = [784, 620, 10]
+    activation_functions = [rectify, rectify, softmax]
 
     # Create a network using the default parameters
-    # debug()
-    a = ANN(layer_structure)
+    a = ANN(layer_structure, activation_functions)
     a.load_input_data()
-    a.train(runs=50)
+    a.train(epochs=10)
     # a.predict(some_784_element_long_flat_image_vector)
