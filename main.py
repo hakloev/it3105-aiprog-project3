@@ -3,9 +3,10 @@
 import logging
 from logging.config import dictConfig
 
+from theano.tensor.nnet import sigmoid
+
 from module5.mnist import mnist_basics
-from module5.myth_testing import debug
-from module5.ann import ANN, rectify, softmax
+from module5.ann import ANN, rectify, softmax, relu
 
 LOG_CONFIG = {
     'version': 1,
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     # Example: [784, 620, 100, 10]
     layer_structure = [784, 620, 10]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, softmax]
+    activation_functions = [rectify, rectify, sigmoid]
 
     # Create a network using the default parameters
     a = ANN(layer_structure, activation_functions)
@@ -68,6 +69,45 @@ if __name__ == "__main__":
     print(a.blind_test(feature_sets[:10]))
 
     # MULTIPLE NETWORK GENERATION AND TESTING
+
+    # Create new net
+    layer_structure = [784, 620, 10]
+    activation_functions = [relu, relu, softmax]
+    a = ANN(layer_structure, activation_functions)
+
+    a.train_input_data = train_data_cache
+    a.train_correct_labels = train_labels_cache
+    a.test_input_data = test_data_cache
+    a.test_correct_labels = test_labels_cache
+
+    # Train current net
+    a.train(epochs=10)
+
+    # Create new net
+    layer_structure = [784, 784, 620, 10]
+    activation_functions = [relu, relu, relu, relu]
+    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.030})
+
+    a.train_input_data = train_data_cache
+    a.train_correct_labels = train_labels_cache
+    a.test_input_data = test_data_cache
+    a.test_correct_labels = test_labels_cache
+
+    # Train current net
+    a.train(epochs=10)
+
+    # Create new net
+    layer_structure = [784, 784, 620, 10]
+    activation_functions = [rectify, relu, relu, relu]
+    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.025})
+
+    a.train_input_data = train_data_cache
+    a.train_correct_labels = train_labels_cache
+    a.test_input_data = test_data_cache
+    a.test_correct_labels = test_labels_cache
+
+    # Train current net
+    a.train(epochs=10)
 
     # Create new net
     layer_structure = [784, 512, 128, 10]
@@ -97,7 +137,7 @@ if __name__ == "__main__":
 
     # Create new net
     layer_structure = [784, 620, 10]
-    activation_functions = [rectify, rectify, rectify]
+    activation_functions = [relu, relu, softmax]
     a = ANN(layer_structure, activation_functions)
 
     a.train_input_data = train_data_cache

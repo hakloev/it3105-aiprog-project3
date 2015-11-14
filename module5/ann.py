@@ -76,6 +76,16 @@ def dropout(x, p=0., rng=None):
     return x
 
 
+def relu(x):
+    """
+    Performs the ReLU activation function on given value x
+    :param x: The dot product between two vectors
+    :return: ReLU value
+    """
+
+    return x * (x > 0)
+
+
 def softmax(x):
     """
     Performs the softmax function on the value x
@@ -150,6 +160,18 @@ def rms_prop(_cost, _params, lr=NETWORK_CONFIG['learning_rate'],
         _updates.append((p, p - lr * g))
 
     return _updates
+
+
+def default_backprop_updates(cost, params, lr=NETWORK_CONFIG['learning_rate']):
+    """
+    Default backpropagation update function
+    :param cost: Cost function (cat crossentropy)
+    :param params: Network model
+    :return: List of updates
+    """
+
+    grads = tensor.grad(cost=cost, wrt=params)
+    return [[p, p - g * lr] for p, g in zip(params, grads)]
 
 
 def normalize_data(data, max_value=255):
@@ -258,7 +280,7 @@ class ANN(object):
         cost = tensor.mean(tensor.nnet.categorical_crossentropy(noise_output, self._label_matrix))
         params = weight_matrix
         # Updatefunction is backpropagaction algorithm using the specified error correction function
-        updates = rms_prop(cost, params, lr=self._config['learning_rate'])
+        updates = default_backprop_updates(cost, params, lr=self._config['learning_rate'])
 
         # Inject the training function that is used by self.train(*args)
         self._train = theano.function(
@@ -275,6 +297,8 @@ class ANN(object):
         Train this network given a data
         :param epochs: The amount of iterations of training that should be done. Uses config training batch size.
         """
+
+        self._log.info('Networking training initiated...')
 
         if not epochs:
             epochs = self._config['max_training_runs']
