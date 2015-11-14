@@ -3,13 +3,9 @@
 import logging
 from logging.config import dictConfig
 
-<<<<<<< HEAD
-from module5.ann import ANN
 from module5.mnist import mnist_basics
 from module5.myth_testing import debug
-=======
 from module5.ann import ANN, rectify, softmax
->>>>>>> 99615fdb895a8152e009837aa66e49ff385ed0be
 
 LOG_CONFIG = {
     'version': 1,
