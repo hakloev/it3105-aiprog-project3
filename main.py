@@ -3,6 +3,8 @@
 import logging
 from logging.config import dictConfig
 
+from module5.mnist import mnist_basics
+from module5.myth_testing import debug
 from module5.ann import ANN, rectify, softmax
 
 LOG_CONFIG = {
@@ -60,13 +62,17 @@ if __name__ == "__main__":
     test_data_cache = a.test_input_data
     test_labels_cache = a.test_correct_labels
 
-    # Train current net
-    a.train(epochs=10)
+    # Train a bit and perform blind test
+    a.train(epochs=5)
+    feature_sets, labels = mnist_basics.load_all_flat_cases(type="testing")
+    print(a.blind_test(feature_sets[:10]))
+
+    # MULTIPLE NETWORK GENERATION AND TESTING
 
     # Create new net
     layer_structure = [784, 512, 128, 10]
     activation_functions = [rectify, rectify, softmax, softmax]
-    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.0015})
+    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.015})
 
     a.train_input_data = train_data_cache
     a.train_correct_labels = train_labels_cache
@@ -101,3 +107,4 @@ if __name__ == "__main__":
 
     # Train current net
     a.train(epochs=10)
+
