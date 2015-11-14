@@ -4,6 +4,7 @@ import logging
 from logging.config import dictConfig
 
 from module5.ann import ANN
+from module5.mnist import mnist_basics
 from module5.myth_testing import debug
 
 LOG_CONFIG = {
@@ -54,5 +55,7 @@ if __name__ == "__main__":
     # debug()
     a = ANN(layer_structure)
     a.load_input_data()
-    a.train(runs=50)
+    a.train(runs=1)
+    feature_sets, labels = mnist_basics.load_all_flat_cases(type="testing")
+    print(a.blind_test(feature_sets[:10]))
     # a.predict(some_784_element_long_flat_image_vector)

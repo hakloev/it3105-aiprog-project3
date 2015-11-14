@@ -332,7 +332,7 @@ class ANN(object):
         self.train_correct_labels = self.vectorize_labels(self.train_correct_labels, self._config['num_labels'])
         self.test_correct_labels = self.vectorize_labels(self.test_correct_labels, self._config['num_labels'])
 
-    def blind_test(self, input_data):
+    def blind_test(self, feature_sets):
         """
         The method blind test must accept a list of sublists, where each sublist is a vector of length 784 corresponding
         to the raw features of one image: each sublist is a flattened image containing integers in the range [0, 255].
@@ -343,15 +343,26 @@ class ANN(object):
         correctly, it should return this:
 
         [7,3,3,8,2]
-        :return:
+
+        :param feature_sets: A list of sublists, with vectors of length 784 containing raw features of one image
+        :return: A list containing the predicted values of each image
         """
 
-        if not isinstance(input_data, list):
-            raise ValueError('input_data must be an instance of list()')
+        if not isinstance(feature_sets, list):
+            raise ValueError('feature_sets must be an instance of list()')
 
-        self._log.info('Initiating blind test with %d classification tasks...' % len(input_data))
+        self._log.info('Initiating blind test with %d classification tasks...' % len(feature_sets))
 
-        pass
+        # Normalize the data to [0, 1] instead of [0, 255]
+        feature_sets = normalize_data(feature_sets)
+
+        raw_results = self.predict(feature_sets)
+
+        """
+        tolist is probably redundant here, but have done it to return
+        on the format specified in the task description
+        """
+        return raw_results.tolist()
 
     @staticmethod
     def vectorize_labels(labels, num_categories):
