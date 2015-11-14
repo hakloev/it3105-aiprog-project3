@@ -50,9 +50,9 @@ def init_weights(shape):
 
 def rectify(x):
     """
-    Performs a vector adjustment of vector x, applying a lower bound of 0.0 for each value.
-    :param x: An input vector x
-    :return: An adjusted vector with lower bounds 0.0
+    Performs a vector adjustment of vector x, applying a lower bound of 0.0 for the value.
+    :param x: An input value x
+    :return: x if x > 0.0
     """
 
     return tensor.maximum(x, 0.)
@@ -76,43 +76,51 @@ def dropout(x, p=0., rng=None):
     return x
 
 
-def softmax(input_vec):
+def softmax(x):
     """
-    Performs the softmax function on the npArray input_vec
-    :param input_vec: The input vector of dot products
+    Performs the softmax function on the value x
+    :param x: The dot product between two vectors
     :return: Softmax value
     """
 
-    e_x = tensor.exp(input_vec - input_vec.max(axis=1).dimshuffle(0, 'x'))
+    e_x = tensor.exp(x - x.max(axis=1).dimshuffle(0, 'x'))
 
     return e_x / e_x.sum(axis=1).dimshuffle(0, 'x')
 
 
-def generate_network_model(input_weight_vector, p_dropout_input, p_dropout_hidden, *layers):
+def generate_network_model(input_weight_vector, p_dropout_input, p_dropout_hidden, layers, activation_functions):
     """
-    Generates a network model that links an input vector through *layers, given dropout values for input/hidden
+    Generates a network model that links an input vector through layers, given dropout values for input/hidden.
+    Activation functions for each layer are specified in the activation_functions list, and is index-correlated
+    with the layers list.
+
     :param input_weight_vector: A numpy fmatrix of input the layer
     :param p_dropout_input: The dropout probability level for input nodes
     :param p_dropout_hidden: The dropout probability level for hidden layer nodes
     :param layers: A series of weight vectors for the hidden layers as well as the output layer
+    :param activation_functions: A series of function pointers to activation functions
     :return: A tuple of hidden layers, followed by the output layer partial y with respect to x
     """
 
-    layers = list(layers)
+    if len(layers) != len(activation_functions) - 1:
+        raise ValueError('The layers and activation function lists do not match in length!')
+
     output_weight_vector = layers.pop()
+    output_activation_function = activation_functions.pop()
     output = list()
 
     input_layer = dropout(input_weight_vector, p_dropout_input)
     previous_layer = input_layer
     while layers:
         next_weight_matrix = layers.pop(0)
-        layer = rectify(tensor.dot(previous_layer, next_weight_matrix))
+        next_activation_function = activation_functions.pop(0)
+        layer = next_activation_function(tensor.dot(previous_layer, next_weight_matrix))
         previous_layer = dropout(layer, p_dropout_hidden)
 
         # Add layer to output after final dropout
         output.append(previous_layer)
 
-    output_layer = softmax(tensor.dot(previous_layer, output_weight_vector))
+    output_layer = output_activation_function(tensor.dot(previous_layer, output_weight_vector))
     output.append(output_layer)
 
     return np.array(output)
@@ -159,7 +167,7 @@ class ANN(object):
     Construct an Artificial neural network
     """
 
-    def __init__(self, layer_structure, config=NETWORK_CONFIG):
+    def __init__(self, layer_structure, activation_functions, config=NETWORK_CONFIG):
         """
         Constructs an Artificial Neural Network based on the provided argument properties.
 
@@ -185,8 +193,9 @@ class ANN(object):
         self._config.update(config)
 
         self._log.info(
-            'Layers: %s, LR: %.5f, MTR: %d, MTE: %d, TRBS: %d.' % (
+            'Layers: %s, Activation functions: %s, LR: %.5f, MTR: %d, MTE: %d, TRBS: %d.' % (
                 repr(layer_structure),
+                repr(activation_functions),
                 self._config['learning_rate'],
                 self._config['max_training_runs'],
                 self._config['max_test_runs'],
@@ -195,47 +204,48 @@ class ANN(object):
         )
 
         self._srng = RandomStreams()
-        self._generate_network(layer_structure)
+        self._generate_network(layer_structure, activation_functions)
 
-    def _generate_network(self, layer_structure):
+    def _generate_network(self, layer_structure, activation_functions):
         """
         Generates the necessary function constructs needed to create a neural network.
         :param layer_structure: The list of node counts representing input, hidden and output layers.
+        :param activation_functions: The list of activation functions corresponding to the layer structure
         """
 
-        self._log.debug('Generating network...')
+        self._log.info('Generating network...')
 
         self._data_matrix = tensor.fmatrix()
         self._label_matrix = tensor.fmatrix()
 
-        self._log.debug('Generating weight matrices...')
+        self._log.info('Generating weight matrices...')
 
         # Generate connection patterns between layers
-        weight_matrix = tuple(
+        weight_matrix = list(
             init_weights((layer_structure[i], layer_structure[i + 1])) for i in range(len(layer_structure) - 1)
         )
 
         self._log.debug(weight_matrix)
 
-        self._log.debug('Generating noise model...')
-        noise = list(generate_network_model(
+        self._log.info('Generating noise model...')
+        noise = generate_network_model(
             self._data_matrix,
             self._config['noise_dropout_input'],
             self._config['noise_dropout_hidden'],
-            *weight_matrix
-        ))
-        print(noise)
+            weight_matrix[:],
+            activation_functions[:]
+        )
 
         assert len(noise) == len(layer_structure) - 1
 
-        self._log.debug('Generating regular model...')
-        layers = list(generate_network_model(
+        self._log.info('Generating regular model...')
+        layers = generate_network_model(
             self._data_matrix,
             self._config['dropout_input'],
             self._config['dropout_hidden'],
-            *weight_matrix
-        ))
-        print(layers)
+            weight_matrix[:],
+            activation_functions[:]
+        )
 
         assert len(layers) == len(layer_structure) - 1
 
@@ -260,17 +270,17 @@ class ANN(object):
         # Inject the prediction function that is used by self.predict(*args)
         self._predict = theano.function(inputs=[self._data_matrix], outputs=output_function, allow_input_downcast=True)
 
-    def train(self, runs=0):
+    def train(self, epochs=0):
         """
         Train this network given a data
-        :param runs: The amount of iterations of training that should be done. Uses config training batch size.
+        :param epochs: The amount of iterations of training that should be done. Uses config training batch size.
         """
 
-        if not runs:
-            runs = self._config['max_training_runs']
+        if not epochs:
+            epochs = self._config['max_training_runs']
 
-        for i in range(runs):
-            self._log.debug('Epoch: %d' % i)
+        for i in range(epochs):
+            self._log.info('Training epoch: %d of %d' % (i, epochs))
 
             start_range = range(0, len(self.train_input_data), self._config['training_batch_size'])
             end_range = range(
@@ -283,11 +293,9 @@ class ANN(object):
             for start, end in zip(start_range, end_range):
                 self._train(self.train_input_data[start:end], self.train_correct_labels[start:end])
 
-            print(self.predict(self.test_input_data)[0])
-
             # Assess the correctness of the network on the entire test set after this epoch
-            self._log.debug(
-                'Correctness: %.4f' % np.average(
+            self._log.info(
+                'Current epoch correctness: %.4f' % np.average(
                     np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)
                 )
             )
