@@ -48,10 +48,56 @@ if __name__ == "__main__":
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
     layer_structure = [784, 620, 10]
+    # Example: [rectify, rectify, softmax]
     activation_functions = [rectify, rectify, softmax]
 
     # Create a network using the default parameters
     a = ANN(layer_structure, activation_functions)
     a.load_input_data()
+
+    train_data_cache = a.train_input_data
+    train_labels_cache = a.train_correct_labels
+    test_data_cache = a.test_input_data
+    test_labels_cache = a.test_correct_labels
+
+    # Train current net
     a.train(epochs=10)
-    # a.predict(some_784_element_long_flat_image_vector)
+
+    # Create new net
+    layer_structure = [784, 512, 128, 10]
+    activation_functions = [rectify, rectify, softmax, softmax]
+    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.0015})
+
+    a.train_input_data = train_data_cache
+    a.train_correct_labels = train_labels_cache
+    a.test_input_data = test_data_cache
+    a.test_correct_labels = test_labels_cache
+
+    # Train current net
+    a.train(epochs=10)
+
+    # Create new net
+    layer_structure = [784, 320, 10]
+    activation_functions = [rectify, rectify, softmax]
+    a = ANN(layer_structure, activation_functions)
+
+    a.train_input_data = train_data_cache
+    a.train_correct_labels = train_labels_cache
+    a.test_input_data = test_data_cache
+    a.test_correct_labels = test_labels_cache
+
+    # Train current net
+    a.train(epochs=10)
+
+    # Create new net
+    layer_structure = [784, 620, 10]
+    activation_functions = [rectify, rectify, rectify]
+    a = ANN(layer_structure, activation_functions)
+
+    a.train_input_data = train_data_cache
+    a.train_correct_labels = train_labels_cache
+    a.test_input_data = test_data_cache
+    a.test_correct_labels = test_labels_cache
+
+    # Train current net
+    a.train(epochs=10)
