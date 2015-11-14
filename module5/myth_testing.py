@@ -150,6 +150,8 @@ def debug():
     )
     predict = theano.function(inputs=[images_matrix], outputs=y_x, allow_input_downcast=True)
 
+    print(te_y)
+
     for i in range(10):
         print('Epoch: %d' % i)
         start_range = range(0, len(tr_x), TRAIN_BATCH_SIZE)

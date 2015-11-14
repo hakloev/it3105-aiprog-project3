@@ -283,6 +283,8 @@ class ANN(object):
             for start, end in zip(start_range, end_range):
                 self._train(self.train_input_data[start:end], self.train_correct_labels[start:end])
 
+            print(self.predict(self.test_input_data)[0])
+
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.debug(
                 'Correctness: %.4f' % np.average(
@@ -297,7 +299,7 @@ class ANN(object):
         :return: A labelvector the network has generated based off of the input vector
         """
 
-        self._predict(*args)
+        return self._predict(*args)
 
     def load_input_data(self, pickle_file=None):
         """
@@ -306,7 +308,7 @@ class ANN(object):
         :param pickle_file: Path to a gzipped pickle file
         """
 
-        self._log.info('Loading input data... (Existing file: %s' % pickle_file)
+        self._log.info('Loading input data... (Existing file: %s)' % pickle_file)
 
         if pickle_file:
             pass
