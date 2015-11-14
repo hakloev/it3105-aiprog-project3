@@ -4,6 +4,7 @@ import logging
 from logging.config import dictConfig
 
 from module5.ann import ANN
+from module5.myth_testing import debug
 
 LOG_CONFIG = {
     'version': 1,
@@ -50,6 +51,7 @@ if __name__ == "__main__":
     layer_structure = [784, 784, 620, 10]
 
     # Create a network using the default parameters
+    #debug()
     a = ANN(layer_structure)
     a.train(runs=50)
     # a.predict(some_784_element_long_flat_image_vector)

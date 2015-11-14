@@ -88,10 +88,10 @@ def softmax(input_vec):
     return e_x / e_x.sum(axis=1).dimshuffle(0, 'x')
 
 
-def generate_network_model(input_vector, p_dropout_input, p_dropout_hidden, *layers):
+def generate_network_model(input_weight_vector, p_dropout_input, p_dropout_hidden, *layers):
     """
     Generates a network model that links an input vector through *layers, given dropout values for input/hidden
-    :param input_vector: A numpy array of input values
+    :param input_weight_vector: A numpy fmatrix of input the layer
     :param p_dropout_input: The dropout probability level for input nodes
     :param p_dropout_hidden: The dropout probability level for hidden layer nodes
     :param layers: A series of weight vectors for the hidden layers as well as the output layer
@@ -99,26 +99,23 @@ def generate_network_model(input_vector, p_dropout_input, p_dropout_hidden, *lay
     """
 
     layers = list(layers)
+    output_weight_vector = layers.pop()
     output = list()
-    layers.insert(0, input_vector)
 
-    print(layers)
+    input_layer = dropout(input_weight_vector, p_dropout_input)
+    previous_layer = input_layer
+    while layers:
+        next_weight_matrix = layers.pop(0)
+        layer = rectify(tensor.dot(previous_layer, next_weight_matrix))
+        previous_layer = dropout(layer, p_dropout_hidden)
 
-    for i in range(len(layers) - 1):
-        if i == 0:
-            p = p_dropout_input
-        else:
-            p = p_dropout_hidden
+        # Add layer to output after final dropout
+        output.append(previous_layer)
 
-        from_vector = dropout(layers[i], p)
-        if i < len(layers) - 1:
-            to_vector = rectify(tensor.dot(from_vector, layers[i + 1]))
-        else:
-            to_vector = softmax(tensor.dot(from_vector, layers[i + 1]))
+    output_layer = softmax(tensor.dot(previous_layer, output_weight_vector))
+    output.append(output_layer)
 
-        output.append(to_vector)
-
-    return output
+    return np.array(output)
 
 
 def rms_prop(_cost, _params, lr=NETWORK_CONFIG['learning_rate'],
@@ -154,7 +151,7 @@ def normalize_data(data, max_value=255):
     :return: A numpy array of floats adjusted based off max value
     """
 
-    return np.array(data).astype(float) / max_value
+    return np.array(data).astype('float64') / max_value
 
 
 class ANN(object):
@@ -227,6 +224,7 @@ class ANN(object):
             self._config['noise_dropout_hidden'],
             *weight_matrix
         ))
+        print(noise)
 
         assert len(noise) == len(layer_structure) - 1
 
@@ -237,6 +235,7 @@ class ANN(object):
             self._config['dropout_hidden'],
             *weight_matrix
         ))
+        print(layers)
 
         assert len(layers) == len(layer_structure) - 1
 

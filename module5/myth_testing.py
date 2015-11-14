@@ -71,14 +71,29 @@ def dropout(x, p=0.):
 
 
 def model(x, _w_h, _w_h2, _w_o, p_drop_input, p_drop_hidden):
+    print("MODEL")
+    print("x: %s" % x)
+    print("_w_w: %s" % _w_h)
+    print("_w_h2: %s" % _w_h2)
+    print("_w_o: %s" % _w_o)
     x = dropout(x, p_drop_input)
     _h = rectify(T.dot(x, _w_h))
+
+    print("x: %s" % x)
+    print("_h: %s" % _h)
 
     _h = dropout(_h, p_drop_hidden)
     _h2 = rectify(T.dot(_h, _w_h2))
 
+    print("_h: %s" % _h)
+    print("_h2: %s" % _h2)
+
     _h2 = dropout(_h2, p_drop_hidden)
     _py_x = softmax(T.dot(_h2, _w_o))
+
+    print("_h2: %s" % _h2)
+    print("_py_x: %s" % _py_x)
+
     return _h, _h2, _py_x
 
 
@@ -105,11 +120,23 @@ def debug():
     w_h2 = init_weights((784, 625))
     w_o = init_weights((625, 10))
 
+    print(images_matrix)
+    print(w_h)
+    print(w_h2)
+    print(w_o)
+
     print('Building model')
 
     noise_h, noise_h2, noise_py_x = model(images_matrix, w_h, w_h2, w_o, 0.2, 0.5)
+    print(noise_h)
+    print(noise_h2)
+    print(noise_py_x)
     h, h2, py_x = model(images_matrix, w_h, w_h2, w_o, 0., 0.)
+    print(h)
+    print(h2)
+    print(py_x)
     y_x = T.argmax(py_x, axis=1)
+    print(y_x)
 
     cost = T.mean(T.nnet.categorical_crossentropy(noise_py_x, labels_matrix))
     params = [w_h, w_h2, w_o]
