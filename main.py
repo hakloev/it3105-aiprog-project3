@@ -6,7 +6,7 @@ from logging.config import dictConfig
 from theano.tensor.nnet import sigmoid
 
 from module5.mnist import mnist_basics
-from module5.ann import ANN, rectify, softmax, relu
+from module5.ann import ANN, rectify, softmax
 
 LOG_CONFIG = {
     'version': 1,
@@ -50,12 +50,12 @@ if __name__ == "__main__":
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [784, 620, 10]
+    layer_structure = [784, 784, 620, 10]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, sigmoid]
+    activation_functions = [rectify, rectify, rectify, sigmoid]
 
     # Create a network using the default parameters
-    a = ANN(layer_structure, activation_functions)
+    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.001})
     a.load_input_data()
 
     train_data_cache = a.train_input_data
@@ -71,61 +71,11 @@ if __name__ == "__main__":
     # MULTIPLE NETWORK GENERATION AND TESTING
 
     # Create new net
-    layer_structure = [784, 620, 10]
-    activation_functions = [relu, relu, softmax]
-    a = ANN(layer_structure, activation_functions)
-
-    a.train_input_data = train_data_cache
-    a.train_correct_labels = train_labels_cache
-    a.test_input_data = test_data_cache
-    a.test_correct_labels = test_labels_cache
-
-    # Train current net
-    a.train(epochs=10)
-
-    # Create new net
-    layer_structure = [784, 784, 620, 10]
-    activation_functions = [relu, relu, relu, relu]
-    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.030})
-
-    a.train_input_data = train_data_cache
-    a.train_correct_labels = train_labels_cache
-    a.test_input_data = test_data_cache
-    a.test_correct_labels = test_labels_cache
-
-    # Train current net
-    a.train(epochs=10)
-
-    # Create new net
-    layer_structure = [784, 784, 620, 10]
-    activation_functions = [rectify, relu, relu, relu]
-    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.025})
-
-    a.train_input_data = train_data_cache
-    a.train_correct_labels = train_labels_cache
-    a.test_input_data = test_data_cache
-    a.test_correct_labels = test_labels_cache
-
-    # Train current net
-    a.train(epochs=10)
-
-    # Create new net
-    layer_structure = [784, 512, 128, 10]
-    activation_functions = [rectify, rectify, softmax, softmax]
-    a = ANN(layer_structure, activation_functions, config={'learning_rate': 0.015})
-
-    a.train_input_data = train_data_cache
-    a.train_correct_labels = train_labels_cache
-    a.test_input_data = test_data_cache
-    a.test_correct_labels = test_labels_cache
-
-    # Train current net
-    a.train(epochs=10)
-
-    # Create new net
-    layer_structure = [784, 320, 10]
-    activation_functions = [rectify, rectify, softmax]
-    a = ANN(layer_structure, activation_functions)
+    layer_structure = [784, 784, 10]
+    activation_functions = [rectify, rectify, sigmoid]
+    a = ANN(layer_structure, activation_functions, config={
+        'learning_rate': 0.009
+    })
 
     a.train_input_data = train_data_cache
     a.train_correct_labels = train_labels_cache
@@ -137,8 +87,10 @@ if __name__ == "__main__":
 
     # Create new net
     layer_structure = [784, 620, 10]
-    activation_functions = [relu, relu, softmax]
-    a = ANN(layer_structure, activation_functions)
+    activation_functions = [sigmoid, sigmoid, sigmoid]
+    a = ANN(layer_structure, activation_functions, config={
+        'learning_rate': 0.005
+    })
 
     a.train_input_data = train_data_cache
     a.train_correct_labels = train_labels_cache
@@ -147,4 +99,3 @@ if __name__ == "__main__":
 
     # Train current net
     a.train(epochs=10)
-

@@ -5,7 +5,6 @@ import logging
 import numpy as np
 import theano
 from theano import tensor
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 from module5.mnist.mnist_basics import load_all_flat_cases
 
@@ -16,10 +15,6 @@ NETWORK_CONFIG = {
     'max_training_runs': 60000,
     'max_test_runs': 10000,
     'training_batch_size': 512,
-    'noise_dropout_input': 0.2,
-    'noise_dropout_hidden': 0.5,
-    'dropout_input': 0.0,
-    'dropout_hidden': 0.0,
     'rho': 0.9,
     'epsilon': 1e-6
 }
@@ -58,34 +53,6 @@ def rectify(x):
     return tensor.maximum(x, 0.)
 
 
-def dropout(x, p=0., rng=None):
-    """
-    Adjusts the values of vector x, given a retain probability P
-    :param x: A numpy vector/array
-    :param p: A retain probability of 0 < p <= 1
-    :param rng: A random number generator stream
-    :return: A probability adjusted numpy vector
-    """
-
-    if not rng:
-        rng = RandomStreams()
-    if p > 0:
-        retain_prob = 1 - p
-        x *= rng.binomial(x.shape, p=retain_prob, dtype=theano.config.floatX)
-        x /= retain_prob
-    return x
-
-
-def relu(x):
-    """
-    Performs the ReLU activation function on given value x
-    :param x: The dot product between two vectors
-    :return: ReLU value
-    """
-
-    return x * (x > 0)
-
-
 def softmax(x):
     """
     Performs the softmax function on the value x
@@ -98,15 +65,13 @@ def softmax(x):
     return e_x / e_x.sum(axis=1).dimshuffle(0, 'x')
 
 
-def generate_network_model(input_weight_vector, p_dropout_input, p_dropout_hidden, layers, activation_functions):
+def generate_network_model(input_weight_vector, layers, activation_functions):
     """
     Generates a network model that links an input vector through layers, given dropout values for input/hidden.
     Activation functions for each layer are specified in the activation_functions list, and is index-correlated
     with the layers list.
 
     :param input_weight_vector: A numpy fmatrix of input the layer
-    :param p_dropout_input: The dropout probability level for input nodes
-    :param p_dropout_hidden: The dropout probability level for hidden layer nodes
     :param layers: A series of weight vectors for the hidden layers as well as the output layer
     :param activation_functions: A series of function pointers to activation functions
     :return: A tuple of hidden layers, followed by the output layer partial y with respect to x
@@ -119,13 +84,12 @@ def generate_network_model(input_weight_vector, p_dropout_input, p_dropout_hidde
     output_activation_function = activation_functions.pop()
     output = list()
 
-    input_layer = dropout(input_weight_vector, p_dropout_input)
-    previous_layer = input_layer
+    previous_layer = input_weight_vector
     while layers:
         next_weight_matrix = layers.pop(0)
         next_activation_function = activation_functions.pop(0)
         layer = next_activation_function(tensor.dot(previous_layer, next_weight_matrix))
-        previous_layer = dropout(layer, p_dropout_hidden)
+        previous_layer = layer
 
         # Add layer to output after final dropout
         output.append(previous_layer)
@@ -162,9 +126,10 @@ def rms_prop(_cost, _params, lr=NETWORK_CONFIG['learning_rate'],
     return _updates
 
 
-def default_backprop_updates(cost, params, lr=NETWORK_CONFIG['learning_rate']):
+def stochastic_gradient_descent(cost, params, lr=NETWORK_CONFIG['learning_rate']):
     """
-    Default backpropagation update function
+    Stochastic gradient descent backpropagation algorithm.
+
     :param cost: Cost function (cat crossentropy)
     :param params: Network model
     :return: List of updates
@@ -225,7 +190,6 @@ class ANN(object):
             )
         )
 
-        self._srng = RandomStreams()
         self._generate_network(layer_structure, activation_functions)
 
     def _generate_network(self, layer_structure, activation_functions):
@@ -249,38 +213,24 @@ class ANN(object):
 
         self._log.debug(weight_matrix)
 
-        self._log.info('Generating noise model...')
-        noise = generate_network_model(
-            self._data_matrix,
-            self._config['noise_dropout_input'],
-            self._config['noise_dropout_hidden'],
-            weight_matrix[:],
-            activation_functions[:]
-        )
-
-        assert len(noise) == len(layer_structure) - 1
-
         self._log.info('Generating regular model...')
         layers = generate_network_model(
             self._data_matrix,
-            self._config['dropout_input'],
-            self._config['dropout_hidden'],
             weight_matrix[:],
             activation_functions[:]
         )
 
         assert len(layers) == len(layer_structure) - 1
 
-        noise_output = noise[-1]
-        regular_output = layers[-1]
+        output = layers[-1]
 
         # Set up the output vector function
-        output_function = tensor.argmax(regular_output, axis=1)
+        output_function = tensor.argmax(output, axis=1)
         # Set error correction function as crossentropy
-        cost = tensor.mean(tensor.nnet.categorical_crossentropy(noise_output, self._label_matrix))
+        cost = tensor.sum(pow((self._label_matrix - output), 2))
         params = weight_matrix
         # Updatefunction is backpropagaction algorithm using the specified error correction function
-        updates = default_backprop_updates(cost, params, lr=self._config['learning_rate'])
+        updates = rms_prop(cost, params, lr=self._config['learning_rate'])
 
         # Inject the training function that is used by self.train(*args)
         self._train = theano.function(
