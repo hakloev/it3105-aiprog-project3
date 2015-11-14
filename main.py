@@ -3,6 +3,8 @@
 import logging
 from logging.config import dictConfig
 
+import numpy
+
 from module5.mnist import mnist_basics
 from module5.ann import ANN, rectify, softmax, sigmoid
 
@@ -64,9 +66,16 @@ if __name__ == "__main__":
     test_labels_cache = a.test_correct_labels
 
     # Train a bit and perform blind test
-    a.train(epochs=10)
-    feature_sets, labels = mnist_basics.load_all_flat_cases(type="testing")
-    print(a.blind_test(feature_sets[:10]))
+    a.train(epochs=5)
+    feature_sets, feature_labels = mnist_basics.gen_flat_cases(digits=numpy.arange(10), type='testing')
+    feature_labels = feature_labels[:10]
+
+    blind_test_result = a.blind_test(feature_sets[:10])
+    # Can't do intersection, since order of list matter
+    correct_result = [i for i, j in zip(blind_test_result, feature_labels) if i == j]
+
+    log.debug("Returned: %s Actual %s " % (blind_test_result, feature_labels))
+    log.info("Number of correct guesses: %i" % len(correct_result))
 
     # MULTIPLE NETWORK GENERATION AND TESTING
 
