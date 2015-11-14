@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [784, 784, 620, 10]
+    layer_structure = [784, 620, 10]
 
     # Create a network using the default parameters
     # debug()
