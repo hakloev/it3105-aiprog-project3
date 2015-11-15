@@ -50,14 +50,13 @@ if __name__ == "__main__":
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [784, 784, 620, 10]
+    layer_structure = [784, 620, 10]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, rectify, sigmoid]
+    activation_functions = [rectify, rectify, sigmoid]
+    cfg = {'learning_rate': 0.003}
 
     # Create a network using the default parameters
-    a = ANN(layer_structure, activation_functions, config={
-        'learning_rate': 0.001
-    })
+    a = ANN(layer_structure, activation_functions, config=cfg)
     a.load_input_data()
 
     train_data_cache = a.train_input_data
@@ -66,7 +65,7 @@ if __name__ == "__main__":
     test_labels_cache = a.test_correct_labels
 
     # Train a bit and perform blind test
-    a.train(epochs=5)
+    a.train(epochs=5, include_test_set=True)
     feature_sets, feature_labels = mnist_basics.gen_flat_cases(digits=numpy.arange(10), type='testing')
     feature_labels = feature_labels[:10]
 
@@ -79,28 +78,11 @@ if __name__ == "__main__":
 
     # MULTIPLE NETWORK GENERATION AND TESTING
 
-    """
-    # Create new net
-    layer_structure = [784, 784, 10]
-    activation_functions = [rectify, rectify, sigmoid]
-    a = ANN(layer_structure, activation_functions, config={
-        'learning_rate': 0.009
-    })
-
-    a.train_input_data = train_data_cache
-    a.train_correct_labels = train_labels_cache
-    a.test_input_data = test_data_cache
-    a.test_correct_labels = test_labels_cache
-
-    # Train current net
-    a.train(epochs=10)
-
     # Create new net
     layer_structure = [784, 620, 10]
-    activation_functions = [sigmoid, sigmoid, sigmoid]
-    a = ANN(layer_structure, activation_functions, config={
-        'learning_rate': 0.005
-    })
+    activation_functions = [rectify, rectify, softmax]
+    cfg = {'learning_rate': 0.0003}
+    a = ANN(layer_structure, activation_functions, config=cfg)
 
     a.train_input_data = train_data_cache
     a.train_correct_labels = train_labels_cache
@@ -108,5 +90,4 @@ if __name__ == "__main__":
     a.test_correct_labels = test_labels_cache
 
     # Train current net
-    a.train(epochs=10)
-    """
+    a.train(epochs=50, include_test_set=True)

@@ -12,8 +12,8 @@ from module5.mnist.mnist_basics import load_all_flat_cases
 NETWORK_CONFIG = {
     'learning_rate': 0.001,
     'num_labels': 10,
-    'max_training_runs': 60000,
-    'max_test_runs': 10000,
+    'max_training_runs': 20,
+    'max_test_runs': 5,
     'training_batch_size': 512,
     'rho': 0.9,
     'epsilon': 1e-6
@@ -74,6 +74,7 @@ def sigmoid(x):
 
     return tensor.nnet.sigmoid(x)
 
+
 def generate_network_model(input_weight_vector, layers, activation_functions):
     """
     Generates a network model that links an input vector through layers, given dropout values for input/hidden.
@@ -112,8 +113,8 @@ def generate_network_model(input_weight_vector, layers, activation_functions):
 def rms_prop(_cost, _params, lr=NETWORK_CONFIG['learning_rate'],
              rho=NETWORK_CONFIG['rho'], epsilon=NETWORK_CONFIG['epsilon']):
     """
-    Backpropagation error evaluation and correction
-    :param _cost: Error correction function (We use crossentropy)
+    Backpropagation error evaluation and correction (Root mean squared propagation)
+    :param _cost: Error correction function
     :param _params: Weight matrix (E.g list of weight vectors for hidden and output layers)
     :param lr: Learning rate of the network
     :param rho: Greek letter Rho (Something to do with momentum)
@@ -181,8 +182,8 @@ class ANN(object):
         self._network = None
         self._data_matrix = None
         self._label_matrix = None
-        self._train = lambda x, y: False
-        self._predict = lambda x: False
+        self._train = lambda x, y: []
+        self._predict = lambda x: []
 
         # Update with new values if other than default is provided
         self._config = NETWORK_CONFIG
@@ -238,7 +239,7 @@ class ANN(object):
         cost = tensor.sum(pow((self._label_matrix - output), 2))
         params = weight_matrix
         # Updatefunction is backpropagaction algorithm using the specified error correction function
-        updates = rms_prop(cost, params, lr=self._config['learning_rate'])
+        updates = rms_prop(cost, params)
 
         # Inject the training function that is used by self.train(*args)
         self._train = theano.function(
@@ -250,7 +251,7 @@ class ANN(object):
         # Inject the prediction function that is used by self.predict(*args)
         self._predict = theano.function(inputs=[self._data_matrix], outputs=output_function, allow_input_downcast=True)
 
-    def train(self, epochs=0):
+    def train(self, epochs=0, include_test_set=False):
         """
         Train this network given a data
         :param epochs: The amount of iterations of training that should be done. Uses config training batch size.
@@ -261,19 +262,25 @@ class ANN(object):
         if not epochs:
             epochs = self._config['max_training_runs']
 
+        tr_input_data = self.train_input_data
+        tr_input_labels = self.train_correct_labels
+        if include_test_set:
+            tr_input_data = np.append(tr_input_data, self.test_input_data, axis=0)
+            tr_input_labels = np.append(tr_input_labels, self.test_correct_labels, axis=0)
+
         for i in range(epochs):
             self._log.info('Training epoch: %d of %d' % (i, epochs))
 
-            start_range = range(0, len(self.train_input_data), self._config['training_batch_size'])
+            start_range = range(0, len(tr_input_data), self._config['training_batch_size'])
             end_range = range(
                 self._config['training_batch_size'],
-                len(self.train_input_data),
+                len(tr_input_data),
                 self._config['training_batch_size']
             )
 
             # Perform the actual training
             for start, end in zip(start_range, end_range):
-                self._train(self.train_input_data[start:end], self.train_correct_labels[start:end])
+                self._train(tr_input_data[start:end], tr_input_labels[start:end])
 
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.info(
@@ -352,7 +359,8 @@ class ANN(object):
         tolist is probably redundant here, but have done it to return
         on the format specified in the task description
         """
-        return raw_results.tolist()
+
+        return raw_results
 
     @staticmethod
     def vectorize_labels(labels, num_categories):
