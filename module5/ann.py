@@ -80,7 +80,7 @@ def softmax_biased(x):
         value=np.ones(
             (4,),
             dtype=theano.config.floatX
-        ) * -4096.,
+        ) * -0.5,
         name='b',
         borrow=True
     )

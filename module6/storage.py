@@ -134,6 +134,7 @@ def load_raw_game_data(games=1, only_successful=True):
         if os:
             gl = list(filter(lambda game: max(game[0][-1]) >= 2048, gl))
         log.info('Parsing complete, returning %d games' % len(gl))
+
         return gl
 
     with open(path.join(__data_directory__, 'game_data.txt')) as f:
@@ -147,6 +148,8 @@ def load_raw_game_data(games=1, only_successful=True):
         # For each line in the raw data file
         for line in f:
             line = line.strip()
+            if line == '':
+                continue
 
             # If we have EOF or game separator character
             if not line or line == '-':
@@ -180,7 +183,7 @@ def load_raw_game_data(games=1, only_successful=True):
                     moves.append(correct_move)
                     maximum = current_max_tile
 
-    return finalize(game_list)
+        return finalize(game_list)
 
 
 class Games(object):
@@ -236,6 +239,7 @@ class Games(object):
 
         for boards, labels in load_raw_game_data(games=num_games, only_successful=only_successful):
             assert len(boards) == len(labels)
+
             logging.getLogger(__name__).debug(
                 'Adding game with %d moves and highest score: %d' % (len(labels), max(boards[-1]))
             )
