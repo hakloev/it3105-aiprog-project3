@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import math
 import re
 import time
 import json
@@ -17,7 +16,7 @@ class Generic2048Control(object):
         return self.ctrl.execute(cmd)
 
     def get_status(self):
-        ''' Check if the game is in an unusual state. '''
+        # Check if the game is in an unusual state.
         return self.execute('''
             var messageContainer = document.querySelector(".game-message");
             if(messageContainer.className.search(/game-over/) !== -1) {"ended"}
@@ -35,7 +34,7 @@ class Generic2048Control(object):
         self.send_key_event('keyup', 32)
 
     def continue_game(self):
-        ''' Continue the game. Only works if the game is in the 'won' state. '''
+        # Continue the game. Only works if the game is in the 'won' state.
         self.execute('document.querySelector(".keep-playing-button").click();')
 
     def send_key_event(self, action, key):
@@ -51,10 +50,13 @@ class Generic2048Control(object):
             element.dispatchEvent ? element.dispatchEvent(keyboardEvent) : element.fireEvent("on%(action)s", keyboardEvent);
             ''' % locals())
 
-class Fast2048Control(Generic2048Control):
-    ''' Control 2048 by hooking the GameManager and executing its move() function.
 
-    This is both safer and faster than the keyboard approach, but it is less compatible with clones. '''
+class Fast2048Control(Generic2048Control):
+    """
+    Control 2048 by hooking the GameManager and executing its move() function.
+
+    This is both safer and faster than the keyboard approach, but it is less compatible with clones.
+    """
 
     def setup(self):
         # Obtain the GameManager instance by triggering a fake restart.
@@ -75,7 +77,9 @@ class Fast2048Control(Generic2048Control):
         self.execute('GameManager.prototype.isGameTerminated = _func_tmp;')
 
     def get_status(self):
-        ''' Check if the game is in an unusual state. '''
+        """
+        Check if the game is in an unusual state.
+        """
         return self.execute('''
             if(GameManager._instance.over) {"ended"}
             else if(GameManager._instance.won && !GameManager._instance.keepPlaying) {"won"}
@@ -95,22 +99,25 @@ class Fast2048Control(Generic2048Control):
                 if cell is None:
                     continue
                 pos = cell['x'], cell['y']
-                tval = cell['value']
-                board[pos[1]][pos[0]] = int(round(math.log(tval, 2)))
+                board[pos[1]][pos[0]] = cell['value']
 
         return board
 
     def execute_move(self, move):
         # We use UDLR ordering; 2048 uses URDL ordering
-        move = [0, 2, 3, 1][move]
+        # move = [0, 1, 2, 3][move]
+        print('Executing move in direction %i' % move)
         self.execute('GameManager._instance.move(%d)' % move)
 
+
 class Keyboard2048Control(Generic2048Control):
-    ''' Control 2048 by accessing the DOM and using key events.
+    """
+    Control 2048 by accessing the DOM and using key events.
 
     This is relatively slow, and may be prone to race conditions if your
     browser is slow. However, it is more generally compatible with various
-    clones of 2048. '''
+    clones of 2048.
+    """
 
     def setup(self):
         self.execute(
@@ -157,22 +164,24 @@ class Keyboard2048Control(Generic2048Control):
                 m = re.match(r'^tile-position-(\d+)-(\d+)$', k)
                 if m:
                     pos = int(m.group(1)), int(m.group(2))
-            board[pos[1]-1][pos[0]-1] = int(round(math.log(tval, 2)))
+            board[pos[1]-1][pos[0]-1] = tval
 
         return board
 
     def execute_move(self, move):
-        key = [38, 40, 37, 39][move]
+        key = [38, 39, 40, 37][move]
+        print("Key %i Move %i" % (key, move))
         self.send_key_event('keydown', key)
         time.sleep(0.01)
         self.send_key_event('keyup', key)
         time.sleep(0.05)
 
-class Hybrid2048Control(Fast2048Control, Keyboard2048Control):
-    ''' Control 2048 by hooking the GameManager and using keyboard inputs.
 
+class Hybrid2048Control(Fast2048Control, Keyboard2048Control):
+    """
+    Control 2048 by hooking the GameManager and using keyboard inputs.
     This is safe and fast, and correctly generates keyboard events for compatibility.
-    '''
+    """
 
     setup = Fast2048Control.setup
     get_status = Keyboard2048Control.get_status

@@ -7,47 +7,24 @@ Taken from https://raw.githubusercontent.com/nneonneo/2048-ai/master/2048.py
 """
 
 from __future__ import print_function
-import ctypes
 import time
-import os
 
-# Enable multithreading?
-MULTITHREAD = True
-
-for suffix in ['so', 'dll', 'dylib']:
-    dllfn = 'bin/2048.' + suffix
-    if not os.path.isfile(dllfn):
-        continue
-    ailib = ctypes.CDLL(dllfn)
-    break
-else:
-    print("Couldn't find 2048 library bin/2048.{so,dll,dylib}! Make sure to build it first.")
-    exit()
-
-ailib.init_tables()
-
-ailib.find_best_move.argtypes = [ctypes.c_uint64]
-ailib.score_toplevel_move.argtypes = [ctypes.c_uint64, ctypes.c_int]
-ailib.score_toplevel_move.restype = ctypes.c_float
+NET = None
 
 
-def to_c_board(m):
-    board = 0
-    i = 0
+def to_ann_board(m):
+    board = []
+    print(m)
     for row in m:
-        for c in row:
-            board |= c << (4*i)
-            i += 1
+        board.extend(row)
     return board
 
 
 def print_board(m):
     for row in m:
-        for c in row:
-            print('%8d' % c, end=' ')
-        print()
+        print('%i' % row, end=', ')
 
-
+"""
 def _to_val(c):
     if c == 0: return 0
     return 2**c
@@ -65,38 +42,54 @@ def _to_score(c):
 
 def to_score(m):
     return [[_to_score(c) for c in row] for row in m]
+"""
 
+"""
 if MULTITHREAD:
     from multiprocessing.pool import ThreadPool
     pool = ThreadPool(4)
 
     def score_toplevel_move(args):
+        print(args)
         return ailib.score_toplevel_move(*args)
 
     def find_best_move(m):
-        board = to_c_board(m)
+        board = to_ann_board(m)
+        print_board(board)
 
-        print_board(to_val(m))
+        # Connect to ANN here and get move for state
+
+        best_move = NET.predict([board])
+        print(""best_move)
 
         scores = pool.map(score_toplevel_move, [(board, move) for move in range(4)])
         bestmove, bestscore = max(enumerate(scores), key=lambda x:x[1])
+
         if bestscore == 0:
             return -1
-        return bestmove
+        return best_move
 else:
-    def find_best_move(m):
-        board = to_c_board(m)
-        return ailib.find_best_move(board)
+"""
 
 
-def movename(move):
-    return ['up', 'down', 'left', 'right'][move]
+def find_best_move(m):
+    board = to_ann_board(m)
+    print(board)
+    # Connect to ANN here
+    best_move = NET.predict([board])
+    print("Best move is %i" % best_move[0])
+    return best_move
+
+
+def move_name(move):
+    return ['up', 'right', 'down', 'left'][move]
 
 
 def play_game(gamectrl):
     moveno = 0
     start = time.time()
     while 1:
+        time.sleep(2)
         state = gamectrl.get_status()
         if state == 'ended':
             break
@@ -109,13 +102,13 @@ def play_game(gamectrl):
         move = find_best_move(board)
         if move < 0:
             break
-        print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
+        print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, move_name(move)))
         gamectrl.execute_move(move)
 
     score = gamectrl.get_score()
     board = gamectrl.get_board()
-    maxval = max(max(row) for row in to_val(board))
-    print("Game over. Final score %d; highest tile %d." % (score, maxval))
+    max_val = max(max(row) for row in to_val(board))
+    print("Game over. Final score %d; highest tile %d." % (score, max_val))
 
 
 def parse_args(argv):
@@ -129,7 +122,13 @@ def parse_args(argv):
     return parser.parse_args(argv)
 
 
-def main(argv):
+def main(argv, net):
+    if net is None:
+        raise ValueError("Need positional argument 'net' to be set")
+
+    global NET
+    NET = net
+
     args = parse_args(argv)
 
     if args.browser == 'firefox':
@@ -140,20 +139,15 @@ def main(argv):
 
     if args.ctrlmode == 'keyboard':
         from module6.gamectrl import Keyboard2048Control
-        gamectrl = Keyboard2048Control(ctrl)
+        game_ctrl = Keyboard2048Control(ctrl)
     elif args.ctrlmode == 'fast':
         from module6.gamectrl import Fast2048Control
-        gamectrl = Fast2048Control(ctrl)
+        game_ctrl = Fast2048Control(ctrl)
     elif args.ctrlmode == 'hybrid':
         from module6.gamectrl import Hybrid2048Control
-        gamectrl = Hybrid2048Control(ctrl)
+        game_ctrl = Hybrid2048Control(ctrl)
 
-    if gamectrl.get_status() == 'ended':
-        gamectrl.restart_game()
+    if game_ctrl.get_status() == 'ended':
+        game_ctrl.restart_game()
 
-    play_game(gamectrl)
-
-
-if __name__ == '__main__':
-    import sys
-    exit(main(sys.argv[1:]))
+    play_game(game_ctrl)

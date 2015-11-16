@@ -53,13 +53,14 @@ if __name__ == "__main__":
     # Use the following to parse 512 games from scratch, that have at least reached 2048,
     # then add an additional filter of min_maxtile 4096, flatten to Nx16 np.ndArray and gzip pickle
 
-    games.parse_from_raw_game_data(num_games=2048, only_successful=True)
+    """
+    games.parse_from_raw_game_data(num_games=500, only_successful=False)
     boards, labels = games.flatten()
     print('Total labels: %d' % len(labels))
     print('Total board states: %d' % len(boards))
     games.save()
-
     """
+
     # Use the following to load already parsed data
     games.load()
     boards, labels = games.flatten()
@@ -69,12 +70,12 @@ if __name__ == "__main__":
     # Example: [784, 620, 100, 10]
     layer_structure = [16, 32, 16, 4]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, rectify, softmax_biased]
+    activation_functions = [rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.00001,
+        'learning_rate': 0.005,
         'num_labels': 4,
         'normalize_max_value': 1,
         'training_batch_size': 512,
@@ -82,12 +83,16 @@ if __name__ == "__main__":
 
     # Create a network using the default parameters
     a = ANN(layer_structure, activation_functions, config=cfg)
-    a.load_input_data(normalize=True, module6_file=True)
+    a.load_input_data(normalize=False, module6_file=True)
 
     train_data_cache = a.train_input_data
     train_labels_cache = a.train_correct_labels
     test_data_cache = a.test_input_data
     test_labels_cache = a.test_correct_labels
 
-    a.train(epochs=1000, include_test_set=False)
-    """
+    a.train(epochs=100, include_test_set=False)
+
+    import sys
+    from module6.browser import main
+    exit(main(sys.argv[1:], a))
+
