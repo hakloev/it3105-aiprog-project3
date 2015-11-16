@@ -207,6 +207,7 @@ class ANN(object):
         self._label_matrix = None
         self._train = lambda x, y: []
         self._predict = lambda x: []
+        self._predict_all = lambda x: []
 
         # Update with new values if other than default is provided
         self._config = NETWORK_CONFIG
@@ -273,6 +274,8 @@ class ANN(object):
         )
         # Inject the prediction function that is used by self.predict(*args)
         self._predict = theano.function(inputs=[self._data_matrix], outputs=output_function, allow_input_downcast=True)
+        # Inject the prediction function that us used by self.predict_all(*args)
+        self._predict_all = theano.function(inputs=[self._data_matrix], outputs=output, allow_input_downcast=True)
 
     def train(self, epochs=0, include_test_set=False):
         """
@@ -322,6 +325,16 @@ class ANN(object):
         """
 
         return self._predict(*args)
+
+    def predict_all(self, *args):
+        """
+        Returns all the outputs and their probability. Opposite from predict, this
+        function does not return the argmax, but the probability of all vectors
+        :param args: An input data vector
+        :return: A label vector the network has generated based off of the input vector
+        """
+
+        return self._predict_all(*args)
 
     def load_input_data(self, module6_file=False, normalize=True):
         """

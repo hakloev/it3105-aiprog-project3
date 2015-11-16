@@ -45,11 +45,28 @@ class BrowserController(object):
 
     def find_best_move(self, m):
         board = self._to_ann_board(m)
-        # print(board)
         # Connect to ANN here
-        best_move = self._NET.predict([board])
-        self._log.debug("Best move is %i" % best_move[0])
-        return best_move
+        # best_move = self._NET.predict([board])  # Returns the best move
+        # self._log.debug("Best move is %i" % best_move[0])
+
+        best_move_all = self._NET.predict_all([board])  # Returns a list of all moves and their probability
+        self._log.info("All moves probability %s" % best_move_all)
+        direction = self.determine_best_move(best_move_all[0], m)
+
+        return direction
+
+    def determine_best_move(self, moves, m):
+        """
+        Returnes the move with the highest probability, where the direction is possible
+        :param moves: Moves to check validity of
+        :param m: The board as a 2D-matrix
+        :return: The direction to move
+        """
+        moves = [(i, p) for i, p in enumerate(moves)]
+        best = max(filter(lambda x: valid_move(x[0], m), moves), key=lambda x: x[1])
+        self._log.info("Best move is %s with a value of %s" % (best[0], best[1]))
+
+        return best[0]
 
     def _play_game(self, game_ctrl):
         move_no = 0
@@ -80,12 +97,21 @@ class BrowserController(object):
         score = game_ctrl.get_score()
         board = game_ctrl.get_board()
         # The following line will fail, as it is not implemented yet
-        max_val = max(max(row) for row in to_val(board))
+        max_val = max(max(row) for row in self.to_val(board))
         self._log.info("Game over. Final score %d; highest tile %d." % (score, max_val))
 
     def print_board(self, m):
         for row in m:
             self._log.debug('%i' % row, end=', ')
+
+    def to_val(self, m):
+        return [[self._to_val(c) for c in row] for row in m]
+
+    @staticmethod
+    def _to_val(c):
+        if c == 0:
+            return 0
+        return 2**c
 
     @staticmethod
     def _to_ann_board(m):
@@ -109,16 +135,45 @@ class BrowserController(object):
 
         return parser.parse_args(argv)
 
+
+def valid_move(dir, m):
+    """
+    Test if a move in the given direction is possible
+    U: 0, R: 1: D: 2: L: 3
+    :param dir: Direction to check
+    :param m: The board to check on
+    :return: A boolean telling if a move is valid or not
+    """
+    size = range(0, 4)
+    if dir == 3 or dir == 1:
+        for x in size:
+            col = m[x]
+            for y in size:
+                if y < 4 - 1 and col[y] == col[y + 1] and col[y] != 0:
+                    return True
+                if dir == 1 and y > 0 and col[y] == 0 and col[y - 1] != 0:
+                    return True
+                if dir == 3 and y < 4 - 1 and col[y] == 0 and col[y + 1] != 0:
+                    return True
+
+    if dir == 0 or dir == 2:
+        for y in size:
+            line = get_column(y, m)
+            for x in size:
+                if x < 4 - 1 and line[x] == line[x + 1] and line[x] != 0:
+                    return True
+                if dir == 2 and x > 0 and line[x] == 0 and line[x - 1] != 0:
+                    return True
+                if dir == 0 and x < 4 - 1 and line[x] == 0 and line[x + 1] != 0:
+                    return True
+    return False
+
+
+def get_column(y, m):
+    return [m[i][y] for i in range(4)]
+
+
 """
-def _to_val(c):
-    if c == 0: return 0
-    return 2**c
-
-
-def to_val(m):
-    return [[_to_val(c) for c in row] for row in m]
-
-
 def _to_score(c):
     if c <= 1:
         return 0
