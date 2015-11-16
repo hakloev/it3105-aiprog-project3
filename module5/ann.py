@@ -1,12 +1,14 @@
 # -*- encoding: utf-8 -*-
 
 import logging
+import time
 
 import numpy as np
 import theano
 from theano import tensor
 
 from module5.mnist.mnist_basics import load_all_flat_cases
+from module6.storage import load_training, load_test
 
 # DEFAULTS
 NETWORK_CONFIG = {
@@ -16,7 +18,8 @@ NETWORK_CONFIG = {
     'max_test_runs': 5,
     'training_batch_size': 512,
     'rho': 0.9,
-    'epsilon': 1e-6
+    'epsilon': 1e-6,
+    'normalize_max_value': 255.
 }
 
 # SETTINGS
@@ -63,6 +66,26 @@ def softmax(x):
     e_x = tensor.exp(x - x.max(axis=1).dimshuffle(0, 'x'))
 
     return e_x / e_x.sum(axis=1).dimshuffle(0, 'x')
+
+
+# Used for 2048
+def softmax_biased(x):
+    """
+    Performs the softmax function on x, with an added bias vector b of shape (4,)
+    :param x: The dot product between input and weight
+    :return: Softmax value
+    """
+
+    b = theano.shared(
+        value=np.ones(
+            (4,),
+            dtype=theano.config.floatX
+        ) * -4096.,
+        name='b',
+        borrow=True
+    )
+
+    return tensor.nnet.softmax(x + b)
 
 
 def sigmoid(x):
@@ -149,7 +172,7 @@ def stochastic_gradient_descent(cost, params, lr=NETWORK_CONFIG['learning_rate']
     return [[p, p - g * lr] for p, g in zip(params, grads)]
 
 
-def normalize_data(data, max_value=255):
+def normalize_data(data, max_value=255.):
     """
     Converts an input list/matrix to numpy array and adjusts
     :param data: The input data list/vector
@@ -258,6 +281,7 @@ class ANN(object):
         """
 
         self._log.info('Networking training initiated...')
+        start_time = time.time()
 
         if not epochs:
             epochs = self._config['max_training_runs']
@@ -284,8 +308,9 @@ class ANN(object):
 
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.info(
-                'Current epoch correctness: %.4f' % np.average(
-                    np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)
+                'Epoch trained with correctness: %.4f (Elapsed time: %.2fs)' % (
+                    np.average(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)),
+                    time.time() - start_time
                 )
             )
 
@@ -298,22 +323,32 @@ class ANN(object):
 
         return self._predict(*args)
 
-    def load_input_data(self, pickle_file=None):
+    def load_input_data(self, module6_file=False, normalize=True):
         """
         Loads input data, either from default file or from specified gzipped pickle.
         NB: ALL input data is presumed to be as a flat structure.
-        :param pickle_file: Path to a gzipped pickle file
+        :param module6_file: Flag for whether or not to load module6 data files
         """
 
-        self._log.info('Loading input data... (Existing file: %s)' % pickle_file)
+        self._log.info('Loading input data... (Module6 file: %s)' % module6_file)
 
-        if pickle_file:
-            pass
+        if module6_file:
+            self.train_input_data, self.train_correct_labels = load_training()
+            self.test_input_data, self.test_correct_labels = load_test()
+            if self.test_input_data is None:
+                # If load_test pickle file does not exist, just take entire training set
+                self.test_input_data = self.train_input_data[:]
+                self.test_correct_labels = self.train_correct_labels[:]
         else:
             self.train_input_data, self.train_correct_labels = load_all_flat_cases()
             self.test_input_data, self.test_correct_labels = load_all_flat_cases(type='testing')
 
-        self._normalize_input_data()
+        # Vectorize our labels (Example: [0, 1, 0, 0]) for num_labels = 4
+        self.train_correct_labels = self.vectorize_labels(self.train_correct_labels, self._config['num_labels'])
+        self.test_correct_labels = self.vectorize_labels(self.test_correct_labels, self._config['num_labels'])
+
+        if normalize:
+            self._normalize_input_data()
 
     def _normalize_input_data(self):
         """
@@ -324,10 +359,8 @@ class ANN(object):
             'Normalizing data and creating label vectors (Class count: %d)' % self._config['num_labels']
         )
 
-        self.train_input_data = normalize_data(self.train_input_data)
-        self.test_input_data = normalize_data(self.test_input_data)
-        self.train_correct_labels = self.vectorize_labels(self.train_correct_labels, self._config['num_labels'])
-        self.test_correct_labels = self.vectorize_labels(self.test_correct_labels, self._config['num_labels'])
+        self.train_input_data = normalize_data(self.train_input_data, max_value=self._config['normalize_max_value'])
+        self.test_input_data = normalize_data(self.test_input_data, max_value=self._config['normalize_max_value'])
 
     def blind_test(self, feature_sets):
         """
