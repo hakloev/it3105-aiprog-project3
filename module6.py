@@ -3,12 +3,13 @@
 # Created by 'myth' on 11/16/15
 
 import logging
+import sys
 from logging.config import dictConfig
 
-from theano.tensor.nnet import sigmoid, hard_sigmoid
-
-from module5.ann import ANN, rectify, softmax, softmax_biased
+from module5.ann import ANN, rectify, softmax
 from module6.storage import Games
+from module6.control.browser import main as browser_controller
+
 
 LOG_CONFIG = {
     'version': 1,
@@ -92,7 +93,5 @@ if __name__ == "__main__":
 
     a.train(epochs=100, include_test_set=False)
 
-    import sys
-    from module6.browser import main
-    exit(main(sys.argv[1:], a))
+    exit(browser_controller(sys.argv[1:], a))
 

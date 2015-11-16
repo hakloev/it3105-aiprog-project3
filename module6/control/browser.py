@@ -7,6 +7,7 @@ Taken from https://raw.githubusercontent.com/nneonneo/2048-ai/master/2048.py
 """
 
 from __future__ import print_function
+
 import time
 
 NET = None
@@ -132,19 +133,19 @@ def main(argv, net):
     args = parse_args(argv)
 
     if args.browser == 'firefox':
-        from module6.ffctrl import FirefoxRemoteControl
+        from module6.control.ffctrl import FirefoxRemoteControl
         if args.port is None:
             args.port = 32000
         ctrl = FirefoxRemoteControl(args.port)
 
     if args.ctrlmode == 'keyboard':
-        from module6.gamectrl import Keyboard2048Control
+        from module6.control.gamectrl import Keyboard2048Control
         game_ctrl = Keyboard2048Control(ctrl)
     elif args.ctrlmode == 'fast':
-        from module6.gamectrl import Fast2048Control
+        from module6.control.gamectrl import Fast2048Control
         game_ctrl = Fast2048Control(ctrl)
     elif args.ctrlmode == 'hybrid':
-        from module6.gamectrl import Hybrid2048Control
+        from module6.control.gamectrl import Hybrid2048Control
         game_ctrl = Hybrid2048Control(ctrl)
 
     if game_ctrl.get_status() == 'ended':
