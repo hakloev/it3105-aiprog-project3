@@ -8,7 +8,7 @@ from logging.config import dictConfig
 
 from module5.ann import ANN, rectify, softmax
 from module6.storage import Games
-from module6.control.browser import main as browser_controller
+from module6.control.browser import BrowserController
 
 
 LOG_CONFIG = {
@@ -93,5 +93,5 @@ if __name__ == "__main__":
 
     a.train(epochs=100, include_test_set=False)
 
-    exit(browser_controller(sys.argv[1:], a))
+    exit(BrowserController(sys.argv[1:], a, gui_update_interval=2))
 
