@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import re
 import time
 import json
@@ -6,10 +7,11 @@ import json
 
 class Generic2048Control(object):
     def __init__(self, ctrl):
+        self._log = logging.getLogger(__name__)
         self.ctrl = ctrl
         self.setup()
 
-    def setup():
+    def setup(self):
         raise NotImplementedError()
 
     def execute(self, cmd):
@@ -104,9 +106,8 @@ class Fast2048Control(Generic2048Control):
         return board
 
     def execute_move(self, move):
-        # We use UDLR ordering; 2048 uses URDL ordering
-        # move = [0, 1, 2, 3][move]
-        print('Executing move in direction %i' % move)
+        # Move in an URDL manner, as 2048
+        self._log.info('Executing move in direction %i' % move)
         self.execute('GameManager._instance.move(%d)' % move)
 
 
@@ -169,8 +170,9 @@ class Keyboard2048Control(Generic2048Control):
         return board
 
     def execute_move(self, move):
+        # Ordered as 2048 in an URDL manner
         key = [38, 39, 40, 37][move]
-        print("Key %i Move %i" % (key, move))
+        self._log.info("Key %i Move %i" % (key, move))
         self.send_key_event('keydown', key)
         time.sleep(0.01)
         self.send_key_event('keyup', key)

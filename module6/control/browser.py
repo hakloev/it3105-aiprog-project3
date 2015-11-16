@@ -13,7 +13,7 @@ import logging
 
 class BrowserController(object):
 
-    def __init__(self, argv, net, gui_update_interval=2):
+    def __init__(self, argv, net, gui_update_interval=0.5):
         if net is None:
             raise ValueError("Need positional argument 'net' to be set")
 
@@ -79,6 +79,7 @@ class BrowserController(object):
 
         score = game_ctrl.get_score()
         board = game_ctrl.get_board()
+        # The following line will fail, as it is not implemented yet
         max_val = max(max(row) for row in to_val(board))
         self._log.info("Game over. Final score %d; highest tile %d." % (score, max_val))
 
@@ -107,7 +108,6 @@ class BrowserController(object):
         parser.add_argument('-k', '--ctrlmode', help="Control mode to use. If the browser control doesn't seem to work, try changing this.", default='hybrid', choices=('keyboard', 'fast', 'hybrid'))
 
         return parser.parse_args(argv)
-
 
 """
 def _to_val(c):

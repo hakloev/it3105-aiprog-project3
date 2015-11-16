@@ -79,7 +79,7 @@ if __name__ == "__main__":
         'learning_rate': 0.005,
         'num_labels': 4,
         'normalize_max_value': 1,
-        'training_batch_size': 512,
+        'training_batch_size': 128,
     }
 
     # Create a network using the default parameters
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     test_data_cache = a.test_input_data
     test_labels_cache = a.test_correct_labels
 
-    a.train(epochs=100, include_test_set=False)
+    a.train(epochs=500, include_test_set=False)
 
-    exit(BrowserController(sys.argv[1:], a, gui_update_interval=2))
+    exit(BrowserController(sys.argv[1:], a, gui_update_interval=0.5))
 
