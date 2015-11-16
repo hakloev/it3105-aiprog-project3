@@ -53,14 +53,13 @@ if __name__ == "__main__":
     # Use the following to parse 512 games from scratch, that have at least reached 2048,
     # then add an additional filter of min_maxtile 4096, flatten to Nx16 np.ndArray and gzip pickle
 
-    """
     games.parse_from_raw_game_data(num_games=2048, only_successful=True)
     boards, labels = games.flatten()
     print('Total labels: %d' % len(labels))
     print('Total board states: %d' % len(boards))
     games.save()
-    """
 
+    """
     # Use the following to load already parsed data
     games.load()
     boards, labels = games.flatten()
@@ -91,3 +90,4 @@ if __name__ == "__main__":
     test_labels_cache = a.test_correct_labels
 
     a.train(epochs=1000, include_test_set=False)
+    """
