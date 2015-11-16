@@ -50,7 +50,7 @@ class BrowserController(object):
         # self._log.debug("Best move is %i" % best_move[0])
 
         best_move_all = self._NET.predict_all([board])  # Returns a list of all moves and their probability
-        self._log.info("All moves probability %s" % best_move_all)
+        self._log.debug("All moves probability %s" % best_move_all)
         direction = self.determine_best_move(best_move_all[0], m)
 
         return direction
@@ -64,7 +64,7 @@ class BrowserController(object):
         """
         moves = [(i, p) for i, p in enumerate(moves)]
         best = max(filter(lambda x: valid_move(x[0], m), moves), key=lambda x: x[1])
-        self._log.info("Best move is %s with a value of %s" % (best[0], best[1]))
+        self._log.debug("Best move is %s with a value of %s" % (best[0], best[1]))
 
         return best[0]
 
@@ -97,7 +97,7 @@ class BrowserController(object):
         score = game_ctrl.get_score()
         board = game_ctrl.get_board()
         # The following line will fail, as it is not implemented yet
-        max_val = max(max(row) for row in self.to_val(board))
+        max_val = max(max(row) for row in board)
         self._log.info("Game over. Final score %d; highest tile %d." % (score, max_val))
 
     def print_board(self, m):

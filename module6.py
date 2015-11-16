@@ -54,12 +54,11 @@ if __name__ == "__main__":
     # Use the following to parse 512 games from scratch, that have at least reached 2048,
     # then add an additional filter of min_maxtile 4096, flatten to Nx16 np.ndArray and gzip pickle
     """
-    games.parse_from_raw_game_data(num_games=256, only_successful=False)
+    games.parse_from_raw_game_data(num_games=512, only_successful=False)
     boards, labels = games.flatten()
     print('Total labels: %d' % len(labels))
     print('Total board states: %d' % len(boards))
     games.save()
-
     """
 
     # Use the following to load already parsed data
@@ -69,17 +68,17 @@ if __name__ == "__main__":
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [16, 64, 32, 4]
+    layer_structure = [16, 32, 32, 4]
     # Example: [rectify, rectify, softmax]
     activation_functions = [rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.001,
+        'learning_rate': 0.005,
         'num_labels': 4,
         'normalize_max_value': 1.,
-        'training_batch_size': 32,
+        'training_batch_size': 256,
     }
 
     # Create a network using the default parameters
@@ -91,6 +90,7 @@ if __name__ == "__main__":
     test_data_cache = a.test_input_data
     test_labels_cache = a.test_correct_labels
 
-    a.train(epochs=500, include_test_set=True)
+    a.train(epochs=400, include_test_set=False)
 
-    exit(BrowserController(sys.argv[1:], a, gui_update_interval=0.7))
+    BrowserController(sys.argv[1:], a, gui_update_interval=0.2)
+
