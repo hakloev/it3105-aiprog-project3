@@ -2,6 +2,7 @@
 #
 # Created by 'myth' on 11/16/15
 
+from copy import deepcopy
 from datetime import datetime
 import glob
 import gzip
@@ -115,7 +116,7 @@ def load_test(filename=None):
     return data
 
 
-def load_raw_game_data(games=1, only_successful=True):
+def load_raw_game_data(games=1, only_successful=False):
     """
     Loads the raw game_data from file as a generator
     :return: A tuple containing a list of board state lists, and corresponding correct moves
@@ -149,6 +150,8 @@ def load_raw_game_data(games=1, only_successful=True):
         for line in f:
             line = line.strip()
             if line == '':
+                if boards:
+                    game_list.append((boards, moves))
                 continue
 
             # If we have EOF or game separator character
@@ -183,6 +186,7 @@ def load_raw_game_data(games=1, only_successful=True):
                     moves.append(correct_move)
                     maximum = current_max_tile
 
+        game_list.append((boards, moves))
         return finalize(game_list)
 
 
@@ -229,7 +233,7 @@ class Games(object):
         self.games['boards'] = boards
         self.games['moves'] = moves
 
-    def parse_from_raw_game_data(self, num_games=1, only_successful=True):
+    def parse_from_raw_game_data(self, num_games=1, only_successful=False):
         """
         Reads raw game data from txt file, and inserts lists of board vectors and corresponding moves
         into this object
@@ -281,6 +285,37 @@ class Games(object):
             assert len(self.games_flat) == len(self.labels_flat)
 
         return self.games_flat, self.labels_flat
+
+    def transform_to_alternate_representation(self):
+        """
+        Converts the board vectors to a different representation based on some metric
+        """
+
+        log = logging.getLogger(__name__)
+        log.info('Transforming boards to alternate representation...')
+
+        def transform(board):
+            alternate = np.zeros((16,), dtype=float)
+            for y in range(4):
+                for x in range(4):
+                    i = y * 4 + x - 1
+                    left = y * 4 + x - 1
+                    right = y * 4 + x + 1
+                    top = y * 4 + x - 4
+                    bottom = y * 4 + x + 4
+                    directions = [left, right, top, bottom]
+
+                    for direction in directions:
+                        try:
+                            alternate[i] += min(board[i], board[direction]) / max(board[i], board[direction])
+                        except IndexError:
+                            pass
+                        except ZeroDivisionError:
+                            pass
+
+            return alternate
+
+        self.games['boards'] = [[transform(board) for board in game] for game in self.games['boards']]
 
     def load(self, test=False):
         """

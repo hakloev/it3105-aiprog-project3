@@ -6,9 +6,13 @@ import logging
 import sys
 from logging.config import dictConfig
 
+from theano.tensor.nnet import sigmoid
+
 from module5.ann import ANN, rectify, softmax
 from module6.storage import Games
-from module6.control.browser import BrowserController
+from module6.points import calculate_points
+from module6.control.browser import BrowserController, BrowserControllerRandom
+from module6.control.java_client_adapter import JavaAdapter
 
 
 LOG_CONFIG = {
@@ -44,22 +48,35 @@ LOG_CONFIG = {
     }
 }
 
-if __name__ == "__main__":
+log = logging.getLogger(__name__)
+
+
+def load_raw_and_save(alternate=False, num_games=16, only_successful=False):
+    """
+    Loads raw data from game_data.txt, parses, transforms to alternate repr if set to True,
+    then flattens the data, and pickles and saves the data to disk.
+    """
 
     # Set up logging
     dictConfig(LOG_CONFIG)
-    log = logging.getLogger(__name__)
     games = Games()
 
     # Use the following to parse 512 games from scratch, that have at least reached 2048,
     # then add an additional filter of min_maxtile 4096, flatten to Nx16 np.ndArray and gzip pickle
-    """
-    games.parse_from_raw_game_data(num_games=512, only_successful=False)
+
+    games.parse_from_raw_game_data(num_games=num_games, only_successful=only_successful)
+    if alternate:
+        games.transform_to_alternate_representation()
     boards, labels = games.flatten()
     print('Total labels: %d' % len(labels))
     print('Total board states: %d' % len(boards))
     games.save()
-    """
+
+
+def load_train_and_run():
+    # Set up logging
+    dictConfig(LOG_CONFIG)
+    games = Games()
 
     # Use the following to load already parsed data
     games.load()
@@ -68,16 +85,16 @@ if __name__ == "__main__":
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [16, 32, 32, 4]
+    layer_structure = [16, 32, 4]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, rectify, softmax]
+    activation_functions = [rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.005,
+        'learning_rate': 0.0008,
         'num_labels': 4,
-        'normalize_max_value': 1.,
+        'normalize_max_value': 1,
         'training_batch_size': 256,
     }
 
@@ -85,12 +102,94 @@ if __name__ == "__main__":
     a = ANN(layer_structure, activation_functions, config=cfg)
     a.load_input_data(normalize=False, module6_file=True)
 
-    train_data_cache = a.train_input_data
-    train_labels_cache = a.train_correct_labels
-    test_data_cache = a.test_input_data
-    test_labels_cache = a.test_correct_labels
+    a.train(epochs=1000, include_test_set=False)
 
-    a.train(epochs=400, include_test_set=False)
 
-    BrowserController(sys.argv[1:], a, gui_update_interval=0.2)
+def load_train_and_play_game(epochs=500):
+    # Set up logging
+    dictConfig(LOG_CONFIG)
+    games = Games()
 
+    # Use the following to load already parsed data
+    games.load()
+    boards, labels = games.flatten()
+
+    # Network structure
+    # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
+    # Example: [784, 620, 100, 10]
+    layer_structure = [16, 32, 16, 4]
+    # Example: [rectify, rectify, softmax]
+    activation_functions = [rectify, rectify, rectify, softmax]
+    # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
+    # Also we normalize the values. Don't know if it will affect anything,
+    # but not taking any chances.
+    cfg = {
+        'learning_rate': 0.0001,
+        'num_labels': 4,
+        'training_batch_size': 8,
+    }
+
+    # Create a network using the default parameters
+    a = ANN(layer_structure, activation_functions, config=cfg)
+    a.load_input_data(normalize=False, module6_file=True)
+
+    a.train(epochs=epochs, include_test_set=False)
+
+    BrowserController(sys.argv[1:], a, gui_update_interval=0)
+
+
+def load_train_and_store_stats(random=False, epochs=1000):
+    # Set up logging
+    dictConfig(LOG_CONFIG)
+    games = Games()
+
+    # Use the following to load already parsed data
+    games.load()
+    boards, labels = games.flatten()
+
+    # Network structure
+    # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
+    # Example: [784, 620, 100, 10]
+    layer_structure = [16, 32, 4]
+    # Example: [rectify, rectify, softmax]
+    activation_functions = [rectify, rectify, softmax]
+    # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
+    # Also we normalize the values. Don't know if it will affect anything,
+    # but not taking any chances.
+    cfg = {
+        'learning_rate': 0.003,
+        'num_labels': 4,
+        'training_batch_size': 512,
+    }
+
+    # Create a network using the default parameters
+    a = ANN(layer_structure, activation_functions, config=cfg)
+    a.load_input_data(normalize=False, module6_file=True)
+
+    a.train(epochs=epochs, include_test_set=False)
+
+    if random:
+        j = JavaAdapter(a, stats_filename='random_statistics.txt')
+    else:
+        j = JavaAdapter(a, stats_filename='ann_statistics.txt')
+
+    j.connect()
+    j.play(random=random)
+
+
+if __name__ == "__main__":
+    """
+    results = []
+
+    for i in range(50):
+        load_train_and_store_stats(random=False, epochs=25)
+        load_train_and_store_stats(random=True, epochs=1)
+        result = calculate_points()
+        print('Current iteration score: %d' % result)
+        results.append(result)
+
+    print(results)
+    """
+    load_train_and_play_game(epochs=1000)
+
+    # load_raw_and_save(alternate=True, only_successful=False, num_games=64)

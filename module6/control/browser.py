@@ -7,6 +7,7 @@ Freely edited version of https://raw.githubusercontent.com/nneonneo/2048-ai/mast
 """
 
 from __future__ import print_function
+import random
 import time
 import logging
 
@@ -75,7 +76,9 @@ class BrowserController(object):
             time.sleep(self._GUI_UPDATE_INTERVAL)
             state = game_ctrl.get_status()
             if state == 'ended':
-                break
+                game_ctrl.restart_game()
+                move_no = 0
+                continue
             elif state == 'won':
                 time.sleep(0.75)
                 game_ctrl.continue_game()
@@ -173,13 +176,47 @@ def get_column(y, m):
     return [m[i][y] for i in range(4)]
 
 
-"""
-def _to_score(c):
-    if c <= 1:
-        return 0
-    return (c-1) * (2**c)
+class BrowserControllerRandom(BrowserController):
+    """
+    Plays randomly
+    """
 
+    def __init__(self, *args, **kwargs):
+        super(BrowserControllerRandom, self).__init__(*args, **kwargs)
 
-def to_score(m):
-    return [[_to_score(c) for c in row] for row in m]
-"""
+    def find_best_move(self, m):
+        return random.randint(0, 3)
+
+    def _play_game(self, game_ctrl):
+        move_no = 0
+        start = time.time()
+        while 1:
+            time.sleep(self._GUI_UPDATE_INTERVAL)
+            state = game_ctrl.get_status()
+            if state == 'ended':
+                self._log.debug('Random player ended. Board state: %s' % repr(game_ctrl.get_board()))
+                self._log.debug('Highest tile was: %d' % max(self._to_ann_board(game_ctrl.get_board())))
+                game_ctrl
+            elif state == 'won':
+                time.sleep(0.75)
+                game_ctrl.continue_game()
+
+            move_no += 1
+            board = game_ctrl.get_board()
+            move = self.find_best_move(board)
+            if move < 0:
+                break
+            self._log.debug("%010.6f: Score %i, Move %i: %s" % (
+                time.time() - start,
+                game_ctrl.get_score(),
+                move_no,
+                self.move_name(move)
+            ))
+
+            game_ctrl.execute_move(move)
+
+        score = game_ctrl.get_score()
+        board = game_ctrl.get_board()
+        # The following line will fail, as it is not implemented yet
+        max_val = max(max(row) for row in board)
+        self._log.info("Game over. Final score %d; highest tile %d." % (score, max_val))
