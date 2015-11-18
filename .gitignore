@@ -5,3 +5,4 @@ __pycache__
 *.log
 .idea/
 log/
+module5/mnist/all_flat_mnist_*_cases_text.*
