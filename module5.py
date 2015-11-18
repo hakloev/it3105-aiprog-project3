@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # Example: [784, 620, 100, 10]
     layer_structure = [784, 620, 10]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, sigmoid]
+    activation_functions = [rectify, rectify, softmax]
     cfg = {'learning_rate': 0.003}
 
     # Create a network using the default parameters
@@ -66,6 +66,10 @@ if __name__ == "__main__":
 
     # Train a bit and perform blind test
     a.train(epochs=5, include_test_set=True)
+
+    mnist_basics.minor_demo(a)
+
+    """
     feature_sets, feature_labels = mnist_basics.gen_flat_cases(digits=numpy.arange(10), type='testing')
     feature_labels = feature_labels[:10]
 
@@ -75,7 +79,9 @@ if __name__ == "__main__":
 
     log.debug("Returned: %s Actual %s " % (blind_test_result, feature_labels))
     log.info("Number of correct guesses: %i" % len(correct_result))
+    """
 
+    """
     # MULTIPLE NETWORK GENERATION AND TESTING
 
     # Create new net
@@ -91,3 +97,4 @@ if __name__ == "__main__":
 
     # Train current net
     a.train(epochs=50, include_test_set=True)
+    """

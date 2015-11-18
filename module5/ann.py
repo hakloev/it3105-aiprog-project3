@@ -296,7 +296,7 @@ class ANN(object):
             tr_input_labels = np.append(tr_input_labels, self.test_correct_labels, axis=0)
 
         for i in range(epochs):
-            self._log.info('Training epoch: %d of %d' % (i, epochs))
+            self._log.info('Training epoch: %d of %d' % (i + 1, epochs))
 
             start_range = range(0, len(tr_input_data), self._config['training_batch_size'])
             end_range = range(
@@ -406,7 +406,7 @@ class ANN(object):
         on the format specified in the task description
         """
 
-        return raw_results
+        return raw_results.tolist()
 
     @staticmethod
     def vectorize_labels(labels, num_categories):
