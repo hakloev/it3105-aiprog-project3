@@ -8,6 +8,8 @@ import numpy
 from module5.mnist import mnist_basics
 from module5.ann import ANN, rectify, softmax, sigmoid
 
+DO_BLIND_TEST = True
+
 LOG_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -67,7 +69,8 @@ if __name__ == "__main__":
     # Train a bit and perform blind test
     a.train(epochs=5, include_test_set=True)
 
-    mnist_basics.minor_demo(a)
+    if DO_BLIND_TEST:
+        mnist_basics.minor_demo(a)
 
     """
     feature_sets, feature_labels = mnist_basics.gen_flat_cases(digits=numpy.arange(10), type='testing')
