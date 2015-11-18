@@ -10,9 +10,10 @@ from theano.tensor.nnet import sigmoid
 
 from module5.ann import ANN, rectify, softmax
 from module6.storage import Games
-from module6.points import calculate_points
+from module6.points import calculate_points, create_run_lists
 from module6.control.browser import BrowserController, BrowserControllerRandom
 from module6.control.java_client_adapter import JavaAdapter
+from module6.demo.ai2048demo import welch
 
 
 LOG_CONFIG = {
@@ -190,6 +191,12 @@ if __name__ == "__main__":
 
     print(results)
     """
-    load_train_and_play_game(epochs=1000)
+    # load_train_and_play_game(epochs=1000)
 
     # load_raw_and_save(alternate=True, only_successful=False, num_games=64)
+
+    load_train_and_store_stats(random=False, epochs=500)
+    load_train_and_store_stats(random=True, epochs=1)
+    # According to the task description, the lists must be in order: random, ann
+    result = welch(*create_run_lists())
+    print('%s' % result)

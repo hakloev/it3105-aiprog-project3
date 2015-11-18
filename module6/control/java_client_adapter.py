@@ -51,7 +51,8 @@ class JavaAdapter(object):
             while True:
                 board = self.sock.recv(RECV_BYTE_SIZE).decode('utf-8')
                 board = board.strip()
-                if board == 'END':
+                # The right or statement below is a dirty hack since the last receive is 'END' + a board state
+                if board == 'END' or board.split()[0] == 'END':
                     max_tile = max(last_board[0])
                     self._log.debug('Game ended. Max tile was: %d' % max_tile)
                     with open(os.path.join('.', self.stats_filename), 'a') as f:

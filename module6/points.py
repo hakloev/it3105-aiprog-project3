@@ -10,7 +10,7 @@ ANN_RUNS = os.path.join('.', 'ann_statistics.txt')
 RANDOM_RUNS = os.path.join('.', 'random_statistics.txt')
 
 
-def calculate_points():
+def create_run_lists():
     ann_stats = []
     random_stats = []
     with open(ANN_RUNS) as ann:
@@ -24,7 +24,15 @@ def calculate_points():
     ann_stats = ann_stats[:shortest]
     random_stats = random_stats[:shortest]
 
+    return random_stats, ann_stats
+
+
+def calculate_points():
+    random_stats, ann_stats = create_run_lists()
+
     def points(p):
         return max(0, min(7, math.ceil(-math.log(p, 10))))
 
-    return points(ttest_ind(ann_stats, random_stats, equal_var=False).pvalue)
+    return points(ttest_ind(random_stats, ann_stats, equal_var=False).pvalue)
+
+
