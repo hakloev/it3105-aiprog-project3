@@ -43,7 +43,7 @@ ANN_CONFIGURATIONS = [
         'layer_structure': [784, 1568, 1176, 10],
         'activation_functions': [rectify, rectify, rectify, softmax],
         'config': {
-            'learning_rate': 0.001
+            'learning_rate': 0.0001
         }
     },
     {
@@ -99,8 +99,13 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
 
     # Do analysis on all but the last ann configuration
-    #do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
-    do_ann_analysis([ANN_CONFIGURATIONS[0], ANN_CONFIGURATIONS[4]], epochs=50, do_welch_test=True, write_statistics=True)
+    # do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
+    do_ann_analysis(
+        [ANN_CONFIGURATIONS[4]],
+        epochs=20,
+        do_welch_test=True,
+        write_statistics=True
+    )
 
     """
     # Network structure
