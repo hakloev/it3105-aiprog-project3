@@ -57,6 +57,14 @@ def rectify(x):
 
     return tensor.maximum(x, 0.)
 
+def softplus(x):
+    """
+    Performs the softplus function on the value x
+    :param x: The dot product between two vectors
+    :return: Softplus value
+    """
+    return tensor.nnet.softplus(x)
+
 
 def softmax(x):
     """

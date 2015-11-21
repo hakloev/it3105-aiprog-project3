@@ -6,7 +6,7 @@ from configuration import LOG_CONFIG
 import numpy as np
 
 from module5.mnist import mnist_basics
-from module5.ann import ANN, rectify, softmax, sigmoid
+from module5.ann import ANN, rectify, softmax, sigmoid, softplus
 
 DO_BLIND_TEST = False
 
@@ -19,32 +19,31 @@ ANN_CONFIGURATIONS = [
         }
     },
     {
-        'layer_structure': [784, 1568, 1176, 10],
-        'activation_functions': [rectify, rectify, rectify, softmax],
-        'config': {
-            'learning_rate': 0.001
-        }
-    },
-    {
         'layer_structure': [784, 620, 10],
-        'activation_functions': [sigmoid, sigmoid, rectify],
+        'activation_functions': [sigmoid, softplus, softmax],
         'config': {
             'learning_rate': 0.001
         }
     },
     {
-        'layer_structure': [784, 320, 10],
-        'activation_functions': [sigmoid, rectify, softmax],
+        'layer_structure': [784, 392, 10],
+        'activation_functions': [softplus, softplus, softmax],
         'config': {
             'learning_rate': 0.005
         }
     },
     {
-        'layer_structure': [784, 620, 310, 10],
+        'layer_structure': [784, 112, 10],
+        'activation_functions': [rectify, sigmoid, softmax],
+        'config': {
+            'learning_rate': 0.005
+        }
+    },
+    {
+        'layer_structure': [784, 1568, 1176, 10],
         'activation_functions': [rectify, rectify, rectify, softmax],
         'config': {
-            'learning_rate': 0.001,
-            'error_function': 'SSE'
+            'learning_rate': 0.001
         }
     },
     {
@@ -100,11 +99,8 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
 
     # Do analysis on all but the last ann configuration
-    do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
-
-    # Do analysis on same net, but with SSE vs Crossentropy
-    # do_single_ann_analysis(ANN_CONFIGURATIONS[-2])
-    # do_single_ann_analysis(ANN_CONFIGURATIONS[-1])
+    #do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
+    do_ann_analysis([ANN_CONFIGURATIONS[0], ANN_CONFIGURATIONS[4]], epochs=50, do_welch_test=True, write_statistics=True)
 
     """
     # Network structure
