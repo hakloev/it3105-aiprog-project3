@@ -10,3 +10,4 @@ module5/mnist/demotest/all_flat_mnist_*_cases_text.txt
 module6/data/*
 *.txt
 debug.log*
+analysis.txt.*
