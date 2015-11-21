@@ -199,6 +199,8 @@ class ANN(object):
 
         self._log = logging.getLogger(__name__)
         self._log.info('Initializing Neural Network...')
+        self._layer_structure = layer_structure
+        self._activation_functions = activation_functions
         self.train_input_data = []
         self.train_correct_labels = []
         self.test_input_data = []
@@ -215,14 +217,7 @@ class ANN(object):
         self._config.update(config)
 
         self._log.info(
-            'Layers: %s, Activation functions: %s, LR: %.5f, MTR: %d, MTE: %d, TRBS: %d.' % (
-                repr(layer_structure),
-                repr(activation_functions),
-                self._config['learning_rate'],
-                self._config['max_training_runs'],
-                self._config['max_test_runs'],
-                self._config['training_batch_size']
-            )
+            self.__str__()
         )
 
         self._generate_network(layer_structure, activation_functions)
@@ -304,8 +299,6 @@ class ANN(object):
 
         errors = []
         for i in range(epochs):
-            self._log.info('Training epoch: %d of %d' % (i + 1, epochs))
-
             start_range = range(0, len(tr_input_data), self._config['training_batch_size'])
             end_range = range(
                 self._config['training_batch_size'],
@@ -321,7 +314,8 @@ class ANN(object):
 
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.info(
-                'Epoch trained with correctness: %.4f (Elapsed time: %.2fs)' % (
+                'Epoch (%d/%d) trained with correctness: %.4f (Elapsed time: %.2fs)' % (
+                    i + 1, epochs,
                     np.mean(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)),
                     time.time() - start_time
                 )
@@ -329,6 +323,8 @@ class ANN(object):
 
         if visualize:
             visualize_errors(errors)
+
+        return errors
 
     def predict(self, *args):
         """
@@ -419,6 +415,17 @@ class ANN(object):
         """
 
         return raw_results.tolist()
+
+    def __str__(self):
+        return 'Layers: %s, Activation functions: %s, LR: %.5f, MTR: %d, MTE: %d, TRBS: %d.' % (
+            repr(self._layer_structure),
+            repr([func.__name__ for func in self._activation_functions]),
+            self._config['learning_rate'],
+            self._config['max_training_runs'],
+            self._config['max_test_runs'],
+            self._config['training_batch_size']
+        )
+
 
     @staticmethod
     def vectorize_labels(labels, num_categories):

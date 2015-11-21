@@ -2,46 +2,79 @@
 
 import logging
 from logging.config import dictConfig
-
-import numpy
+from configuration import LOG_CONFIG
+import numpy as np
 
 from module5.mnist import mnist_basics
 from module5.ann import ANN, rectify, softmax, sigmoid
 
 DO_BLIND_TEST = False
 
-LOG_CONFIG = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'default',
-            'stream': 'ext://sys.stdout'
-        },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'default',
-            'filename': 'debug.log',
-            'maxBytes': 1024 * 1024 * 10,
-            'backupCount': 1
+ANN_CONFIGURATIONS = [
+    {
+        'layer_structure': [784, 620, 10],
+        'activation_functions': [rectify, rectify, softmax],
+        'config': {
+            'learning_rate': 0.001
         }
     },
-    'formatters': {
-        'default': {
-            'format': '[%(asctime)s] %(levelname)s %(name)s.%(funcName)s:%(lineno)d %(message)s'
+    {
+        'layer_structure': [784, 1568, 1176, 10],
+        'activation_functions': [rectify, rectify, rectify, softmax],
+        'config': {
+            'learning_rate': 0.001
         }
     },
-    'loggers': {
-        '': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True
+    {
+        'layer_structure': [784, 620, 10],
+        'activation_functions': [sigmoid, sigmoid, rectify],
+        'config': {
+            'learning_rate': 0.001
+        }
+    },
+    {
+        'layer_structure': [784, 320, 10],
+        'activation_functions': [sigmoid, rectify, softmax],
+        'config': {
+            'learning_rate': 0.005
+        }
+    },
+    {
+        'layer_structure': [784, 620, 310, 10],
+        'activation_functions': [rectify, rectify, rectify, softmax],
+        'config': {
+            'learning_rate': 0.001
         }
     }
-}
+]
+
+
+def do_ann_analysis(epochs=20):
+    for config in ANN_CONFIGURATIONS:
+        layer_struct = config['layer_structure']
+        af = config['activation_functions']
+        conf = config['config']
+
+        a = ANN(layer_struct, af, config=conf)
+        a.load_input_data()
+        errors = a.train(epochs=epochs, visualize=False)
+        log.debug('ANN average error: %.4f' % np.mean(errors))
+
+        training_correctness = np.mean(np.argmax(a.train_correct_labels, axis=1) == a.predict(a.train_input_data))
+        testing_correctness = np.mean(np.argmax(a.test_correct_labels, axis=1) == a.predict(a.test_input_data))
+
+        log.info('ANN correctness on training data: %.4f' % training_correctness)
+        log.info('ANN correctness on testing data: %.4f' % testing_correctness)
+
+        with open('analysis.txt', 'a') as file:
+            statistics = '%s\n%.4f\n%.4f\n%s\n-\n' % (
+                str(a),
+                training_correctness,
+                testing_correctness,
+                repr(errors)
+            )
+            file.write(statistics)
+
 
 if __name__ == "__main__":
 
@@ -49,6 +82,9 @@ if __name__ == "__main__":
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
+    do_ann_analysis()
+
+    """
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
@@ -67,10 +103,11 @@ if __name__ == "__main__":
     test_labels_cache = a.test_correct_labels
 
     # Train a bit and perform blind test
-    a.train(epochs=20, include_test_set=False, visualize=True)
+    a.train(epochs=10, include_test_set=False, visualize=False)
 
     if DO_BLIND_TEST:
         mnist_basics.minor_demo(a)
+    """
 
     """
     feature_sets, feature_labels = mnist_basics.gen_flat_cases(digits=numpy.arange(10), type='testing')
