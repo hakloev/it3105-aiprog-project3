@@ -43,7 +43,16 @@ ANN_CONFIGURATIONS = [
         'layer_structure': [784, 620, 310, 10],
         'activation_functions': [rectify, rectify, rectify, softmax],
         'config': {
-            'learning_rate': 0.001
+            'learning_rate': 0.001,
+            'error_function': 'SSE'
+        }
+    },
+    {
+        'layer_structure': [784, 620, 310, 10],
+        'activation_functions': [rectify, rectify, rectify, softmax],
+        'config': {
+            'learning_rate': 0.001,
+            'error_function': 'Crossentropy'
         }
     }
 ]
@@ -51,30 +60,33 @@ ANN_CONFIGURATIONS = [
 
 def do_ann_analysis(epochs=20):
     for config in ANN_CONFIGURATIONS:
-        layer_struct = config['layer_structure']
-        af = config['activation_functions']
-        conf = config['config']
+        do_single_ann_analysis(config, epochs=epochs)
 
-        a = ANN(layer_struct, af, config=conf)
-        a.load_input_data()
-        errors = a.train(epochs=epochs, visualize=False)
-        log.debug('ANN average error: %.4f' % np.mean(errors))
 
-        training_correctness = np.mean(np.argmax(a.train_correct_labels, axis=1) == a.predict(a.train_input_data))
-        testing_correctness = np.mean(np.argmax(a.test_correct_labels, axis=1) == a.predict(a.test_input_data))
+def do_single_ann_analysis(config, epochs=20):
+    layer_struct = config['layer_structure']
+    af = config['activation_functions']
+    conf = config['config']
 
-        log.info('ANN correctness on training data: %.4f' % training_correctness)
-        log.info('ANN correctness on testing data: %.4f' % testing_correctness)
+    a = ANN(layer_struct, af, config=conf)
+    a.load_input_data()
+    errors = a.train(epochs=epochs, visualize=False)
+    log.debug('ANN average error: %.4f' % np.mean(errors))
 
-        with open('analysis.txt', 'a') as file:
-            statistics = '%s\n%.4f\n%.4f\n%s\n-\n' % (
-                str(a),
-                training_correctness,
-                testing_correctness,
-                repr(errors)
-            )
-            file.write(statistics)
+    training_correctness = np.mean(np.argmax(a.train_correct_labels, axis=1) == a.predict(a.train_input_data))
+    testing_correctness = np.mean(np.argmax(a.test_correct_labels, axis=1) == a.predict(a.test_input_data))
 
+    log.info('ANN correctness on training data: %.4f' % training_correctness)
+    log.info('ANN correctness on testing data: %.4f' % testing_correctness)
+
+    with open('analysis.txt', 'a') as file:
+        statistics = '%s\n%.4f\n%.4f\n%s\n-\n' % (
+            str(a),
+            training_correctness,
+            testing_correctness,
+            repr(errors)
+        )
+        file.write(statistics)
 
 if __name__ == "__main__":
 
@@ -82,7 +94,12 @@ if __name__ == "__main__":
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
-    do_ann_analysis()
+    # Do analysis on all ann configurations
+    # do_ann_analysis()
+
+    # Do analysis on same net, but with SSE vs Crossentropy
+    do_single_ann_analysis(ANN_CONFIGURATIONS[-2])
+    do_single_ann_analysis(ANN_CONFIGURATIONS[-1])
 
     """
     # Network structure

@@ -18,6 +18,7 @@ NETWORK_CONFIG = {
     'max_training_runs': 20,
     'max_test_runs': 5,
     'training_batch_size': 512,
+    'error_function': 'sse',
     'rho': 0.9,
     'epsilon': 1e-6,
     'normalize_max_value': 255.
@@ -256,7 +257,14 @@ class ANN(object):
 
         # Set up the output vector function
         output_function = tensor.argmax(output, axis=1)
-        cost = tensor.sum(pow((self._label_matrix - output), 2))
+        if self._config['error_function'] == 'Crossentropy':
+            self._log.info('Using crossentropy as error function')
+            cost = tensor.mean(tensor.nnet.categorical_crossentropy(output, self._label_matrix))
+        else:
+            # Default error function is SSE
+            self._log.info('Using SSE as error function')
+            cost = tensor.sum(pow((self._label_matrix - output), 2))
+
         params = weight_matrix
         # Updatefunction is backpropagaction algorithm using the specified error correction function
         updates = rms_prop(cost, params)
@@ -417,10 +425,11 @@ class ANN(object):
         return raw_results.tolist()
 
     def __str__(self):
-        return 'Layers: %s, Activation functions: %s, LR: %.5f, MTR: %d, MTE: %d, TRBS: %d.' % (
+        return 'Layers: %s, Activation functions: %s, LR: %.5f, ERROR: %s, MTR: %d, MTE: %d, TRBS: %d.' % (
             repr(self._layer_structure),
             repr([func.__name__ for func in self._activation_functions]),
             self._config['learning_rate'],
+            self._config['error_function'],
             self._config['max_training_runs'],
             self._config['max_test_runs'],
             self._config['training_batch_size']
