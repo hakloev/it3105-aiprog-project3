@@ -4,6 +4,7 @@ import logging
 import time
 
 import numpy as np
+import matplotlib.pyplot as plt
 import theano
 from theano import tensor
 
@@ -277,11 +278,17 @@ class ANN(object):
         # Inject the prediction function that us used by self.predict_all(*args)
         self._predict_all = theano.function(inputs=[self._data_matrix], outputs=output, allow_input_downcast=True)
 
-    def train(self, epochs=0, include_test_set=False):
+    def train(self, epochs=0, include_test_set=False, visualize=False):
         """
         Train this network given a data
         :param epochs: The amount of iterations of training that should be done. Uses config training batch size.
         """
+        def visualize_errors(err):
+            plt.plot(list(map(lambda x: x + 1, range(epochs))), err, '--bo')
+            plt.ylabel('Errors')
+            plt.xlabel('Epochs')
+            plt.title('Errors over time')
+            plt.show()
 
         self._log.info('Networking training initiated...')
         start_time = time.time()
@@ -295,6 +302,7 @@ class ANN(object):
             tr_input_data = np.append(tr_input_data, self.test_input_data, axis=0)
             tr_input_labels = np.append(tr_input_labels, self.test_correct_labels, axis=0)
 
+        errors = []
         for i in range(epochs):
             self._log.info('Training epoch: %d of %d' % (i + 1, epochs))
 
@@ -305,9 +313,11 @@ class ANN(object):
                 self._config['training_batch_size']
             )
 
+            error = 0
             # Perform the actual training
             for start, end in zip(start_range, end_range):
-                self._train(tr_input_data[start:end], tr_input_labels[start:end])
+                error += self._train(tr_input_data[start:end], tr_input_labels[start:end])
+            errors.append(error)
 
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.info(
@@ -317,13 +327,15 @@ class ANN(object):
                 )
             )
 
+        if visualize:
+            visualize_errors(errors)
+
     def predict(self, *args):
         """
         Attempt to predict a label vector based off the input data vector
         :param args: An input data vector
         :return: A labelvector the network has generated based off of the input vector
         """
-
         return self._predict(*args)
 
     def predict_all(self, *args):

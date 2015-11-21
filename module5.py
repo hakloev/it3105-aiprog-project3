@@ -8,7 +8,7 @@ import numpy
 from module5.mnist import mnist_basics
 from module5.ann import ANN, rectify, softmax, sigmoid
 
-DO_BLIND_TEST = True
+DO_BLIND_TEST = False
 
 LOG_CONFIG = {
     'version': 1,
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     layer_structure = [784, 620, 10]
     # Example: [rectify, rectify, softmax]
     activation_functions = [rectify, rectify, softmax]
-    cfg = {'learning_rate': 0.003}
+    cfg = {'learning_rate': 0.002}
 
     # Create a network using the default parameters
     a = ANN(layer_structure, activation_functions, config=cfg)
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     test_labels_cache = a.test_correct_labels
 
     # Train a bit and perform blind test
-    a.train(epochs=5, include_test_set=True)
+    a.train(epochs=20, include_test_set=False, visualize=True)
 
     if DO_BLIND_TEST:
         mnist_basics.minor_demo(a)

@@ -125,9 +125,9 @@ def load_train_and_play_game(epochs=500):
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.0001,
+        'learning_rate': 0.00001,
         'num_labels': 4,
-        'training_batch_size': 8,
+        'training_batch_size': 1,
     }
 
     # Create a network using the default parameters
@@ -191,12 +191,14 @@ if __name__ == "__main__":
 
     print(results)
     """
-    # load_train_and_play_game(epochs=1000)
+    load_train_and_play_game(epochs=1000)
 
-    # load_raw_and_save(alternate=True, only_successful=False, num_games=64)
+    # load_raw_and_save(alternate=True, only_successful=False, num_games=2)
 
+    """
     load_train_and_store_stats(random=False, epochs=500)
     load_train_and_store_stats(random=True, epochs=1)
     # According to the task description, the lists must be in order: random, ann
     result = welch(*create_run_lists())
     print('%s' % result)
+    """
