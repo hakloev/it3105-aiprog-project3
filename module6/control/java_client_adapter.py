@@ -9,6 +9,7 @@ from random import randint
 import socket
 
 from module6.control.browser import valid_move
+from module6.storage import transform
 
 RECV_BYTE_SIZE = 1024
 DEFAULT_FILENAME = 'play_statistics.txt'
@@ -35,12 +36,13 @@ class JavaAdapter(object):
         self.sock.connect((host, port))
         self._log.info('Connected to %s:%d' % (host, port))
 
-    def play(self, runs=50, random=False):
+    def play(self, runs=50, random=False, vectorlength=16):
         """
         Starts the main run loop for playing the game using the network.
         """
 
         self._log.info('Starting play loop with %d runs...' % runs)
+        results = []
 
         # Clear the file
         with open(self.stats_filename, 'w') as f:
@@ -51,23 +53,32 @@ class JavaAdapter(object):
             while True:
                 board = self.sock.recv(RECV_BYTE_SIZE).decode('utf-8')
                 board = board.strip()
+
                 # The right or statement below is a dirty hack since the last receive is 'END' + a board state
                 if board == 'END' or board.split()[0] == 'END':
                     max_tile = max(last_board[0])
                     self._log.debug('Game ended. Max tile was: %d' % max_tile)
+
+                    results.append(max_tile)
                     with open(os.path.join('.', self.stats_filename), 'a') as f:
                         f.write("%d\n" % max_tile)
                     break
+
                 board = self.transform_board(board)
                 last_board = board
+
                 if not random:
-                    results = self.net.predict_all(board)
-                    direction = determine_best_move(results[0], board[0].reshape(4, 4))
+                    if vectorlength != 16:
+                        r = self.net.predict_all([transform(board[0], discrete=True)])
+                    else:
+                        r = self.net.predict_all(board)
+                    direction = determine_best_move(r[0], board[0].reshape(4, 4))
                 else:
                     direction = randint(0, 3)
                 self.sock.send(bytes('%d\n' % direction, encoding='utf-8'))
 
         self.sock.close()
+        return results
 
     def reset(self):
         """

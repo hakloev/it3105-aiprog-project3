@@ -3,6 +3,8 @@ import logging
 import re
 import time
 import json
+import random
+import numpy as np
 
 
 class Generic2048Control(object):
@@ -40,17 +42,18 @@ class Generic2048Control(object):
         self.execute('document.querySelector(".keep-playing-button").click();')
 
     def send_key_event(self, action, key):
-        # Use generic events for compatibility with Chrome, which (for inexplicable reasons) doesn't support setting keyCode on KeyboardEvent objects.
+        # Use generic events for compatibility with Chrome,
+        # which (for inexplicable reasons) doesn't support setting keyCode on KeyboardEvent objects.
         # See http://stackoverflow.com/questions/8942678/keyboardevent-in-chrome-keycode-is-0.
         return self.execute('''
-            var keyboardEvent = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
-            if(keyboardEvent.initEvent)
-                keyboardEvent.initEvent("%(action)s", true, true);
-            keyboardEvent.keyCode = %(key)s;
-            keyboardEvent.which = %(key)s;
-            var element = document.body || document;
-            element.dispatchEvent ? element.dispatchEvent(keyboardEvent) : element.fireEvent("on%(action)s", keyboardEvent);
-            ''' % locals())
+        var keyboardEvent = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
+        if(keyboardEvent.initEvent)
+            keyboardEvent.initEvent("%(action)s", true, true);
+        keyboardEvent.keyCode = %(key)s;
+        keyboardEvent.which = %(key)s;
+        var element = document.body || document;
+        element.dispatchEvent ? element.dispatchEvent(keyboardEvent) : element.fireEvent("on%(action)s", keyboardEvent);
+        ''' % locals())
 
 
 class Fast2048Control(Generic2048Control):
@@ -107,7 +110,7 @@ class Fast2048Control(Generic2048Control):
 
     def execute_move(self, move):
         # Move in an URDL manner, as 2048
-        self._log.info('Executing move in direction %i' % move)
+        self._log.debug('Executing move in direction %i' % move)
         self.execute('GameManager._instance.move(%d)' % move)
 
 
@@ -172,11 +175,11 @@ class Keyboard2048Control(Generic2048Control):
     def execute_move(self, move):
         # Ordered as 2048 in an URDL manner
         key = [38, 39, 40, 37][move]
-        self._log.info("Key %i Move %i" % (key, move))
+        self._log.debug("Key %i Move %i" % (key, move))
         self.send_key_event('keydown', key)
-        time.sleep(0.01)
+        time.sleep(0.005)
         self.send_key_event('keyup', key)
-        time.sleep(0.05)
+        time.sleep(0.005)
 
 
 class Hybrid2048Control(Fast2048Control, Keyboard2048Control):
@@ -190,3 +193,182 @@ class Hybrid2048Control(Fast2048Control, Keyboard2048Control):
     get_score = Fast2048Control.get_score
     get_board = Fast2048Control.get_board
     execute_move = Keyboard2048Control.execute_move
+
+# GENERICS FOR MOVE STATE EVALUATION
+
+# Directions, DO NOT MODIFY
+UP = 1
+DOWN = 2
+LEFT = 3
+RIGHT = 4
+
+# Offsets for computing tile indices in each direction.
+# DO NOT MODIFY this dictionary.
+OFFSETS = {UP: (1, 0),
+           DOWN: (-1, 0),
+           LEFT: (0, 1),
+           RIGHT: (0, -1)}
+
+
+def zero_to_right(line):
+
+    """ Helper function for merge() that put all non-zero term
+    to the left with no space. i.e. zero's to the right"""
+
+    length = len(line)
+    result = [0] * length
+    idx = 0
+    for num in line:
+        if num != 0:
+            result[idx] = num
+            idx += 1
+
+    return result
+
+
+def next_occ(seq, idx):
+    """find the index of next value that is the same and to the right of current index """
+
+    if seq[idx + 1:].count(seq[idx]) > 0:
+        new_idx = seq[idx + 1:].index(seq[idx])
+        return new_idx + idx + 1
+
+    else:
+        return -9999
+
+
+def check_gap(seq, idx1, idx2):
+    """check if there are any non-zero entries in between idx1 and idx2"""
+
+    for num in range(idx1 + 1, idx2):
+        if seq[num] != 0:
+            return True
+
+    return False
+
+
+def merge(line):
+    """
+    Helper function that merges a single row or column in 2048
+    """
+
+    result_list = [0] * len(line)
+    merged = []
+
+    for num in range(len(line)):
+        second_occurence = next_occ(line, num)
+        first_bool = not(check_gap(line, num, second_occurence))
+        second_bool = not(num in merged)
+
+        if second_occurence != -9999 and first_bool and second_bool:
+
+            result_list[second_occurence] = 2 * line[num]
+            merged.append(second_occurence)
+        elif second_bool:
+            result_list[num] = line[num]
+
+    return zero_to_right(result_list)
+
+
+def choose(lst, height, width):
+    """choose a random zero tile"""
+    while True:
+        row = random.randrange(height)
+        col = random.randrange(width)
+        if lst[row][col] == 0:
+            return row, col
+
+
+def insert_row(seq, des_row, row):
+    """
+    insert a row to a given destination row number in the sequence that represent the grid
+    return the new modified grid representation
+    """
+    seq[des_row] = row
+    return seq
+
+
+def insert_col(seq, des_col, col):
+    """
+    insert a column to a given destination column number in the sequence that represent the grid
+    return the new modified grid representation
+    """
+
+    num = 0
+
+    for row in seq:
+        row[des_col] = col[num]
+        num += 1
+
+    return seq
+
+
+def init_tiles(seq, direction):
+    """
+    return a list of indices of tiles whose value will be first passed into the merged function
+    with respect to the direction chosen.
+    """
+    row = len(seq)
+    col = len(seq[0])
+    dir_dict = {
+        UP: [[0, i] for i in range(col)],
+        DOWN: [[row - 1, i] for i in range(col)],
+        LEFT: [[i, 0] for i in range(row)],
+        RIGHT: [[i, col - 1] for i in range(row)]
+    }
+    return dir_dict[direction]
+
+
+def lines_for_insert(seq, direction):
+    """
+    to determine all the lines of values that are to be inserted into the grid
+    """
+    # this is a list of list that contains list of lines
+    lines = []
+    initial = init_tiles(seq, direction)
+    offsets = OFFSETS[direction]
+
+    line_len = 0
+    if direction == UP or direction == DOWN:
+        line_len = len(seq)
+    elif direction == LEFT or direction == RIGHT:
+        line_len = len(seq[0])
+
+    for tile in initial:
+        # this is a list of value of one single individual line
+        line = []
+        for num in range(line_len):
+            row = tile[0] + num * offsets[0]
+            col = tile[1] + num * offsets[1]
+            line.append(seq[row][col])
+
+        lines.append(line)
+
+    return lines
+
+
+def apply_move(seq, direction):
+    """
+    this helper function will exercute the move method in place of the class below
+    """
+    grid = seq[:]
+    idx = 0
+    lines = lines_for_insert(grid, direction)
+    for line in lines:
+        if direction == UP:
+            insert_col(grid, idx, merge(line))
+
+        elif direction == DOWN:
+            insert_col(grid, idx, merge(line)[::-1])
+
+        elif direction == LEFT:
+            insert_row(grid, idx, merge(line))
+
+        elif direction == RIGHT:
+            insert_row(grid, idx, merge(line)[::-1])
+
+        idx += 1
+
+    npgrid = np.array(grid).reshape((16,))
+
+    return npgrid

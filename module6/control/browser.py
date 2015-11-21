@@ -11,10 +11,12 @@ import random
 import time
 import logging
 
+from module6.storage import transform
+
 
 class BrowserController(object):
 
-    def __init__(self, argv, net, gui_update_interval=0.5):
+    def __init__(self, argv, net, gui_update_interval=0.5, vectorlength=16):
         if net is None:
             raise ValueError("Need positional argument 'net' to be set")
 
@@ -22,6 +24,7 @@ class BrowserController(object):
         self._args = self._parse_args(argv)
         self._GUI_UPDATE_INTERVAL = gui_update_interval
         self._NET = net
+        self._vec_len = vectorlength
 
         if self._args.browser == 'firefox':
             from module6.control.ffctrl import FirefoxRemoteControl
@@ -49,6 +52,9 @@ class BrowserController(object):
         # Connect to ANN here
         # best_move = self._NET.predict([board])  # Returns the best move
         # self._log.debug("Best move is %i" % best_move[0])
+
+        if self._vec_len != 16:
+            board = transform(board, discrete=True)
 
         best_move_all = self._NET.predict_all([board])  # Returns a list of all moves and their probability
         self._log.debug("All moves probability %s" % best_move_all)
@@ -196,7 +202,6 @@ class BrowserControllerRandom(BrowserController):
             if state == 'ended':
                 self._log.debug('Random player ended. Board state: %s' % repr(game_ctrl.get_board()))
                 self._log.debug('Highest tile was: %d' % max(self._to_ann_board(game_ctrl.get_board())))
-                game_ctrl
             elif state == 'won':
                 time.sleep(0.75)
                 game_ctrl.continue_game()

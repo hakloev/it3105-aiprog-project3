@@ -322,7 +322,7 @@ class ANN(object):
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.info(
                 'Epoch trained with correctness: %.4f (Elapsed time: %.2fs)' % (
-                    np.average(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)),
+                    np.mean(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)),
                     time.time() - start_time
                 )
             )
