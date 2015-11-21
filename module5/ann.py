@@ -258,11 +258,11 @@ class ANN(object):
         # Set up the output vector function
         output_function = tensor.argmax(output, axis=1)
         if self._config['error_function'] == 'Crossentropy':
-            self._log.info('Using crossentropy as error function')
+            self._log.debug('Using crossentropy as error function')
             cost = tensor.mean(tensor.nnet.categorical_crossentropy(output, self._label_matrix))
         else:
             # Default error function is SSE
-            self._log.info('Using SSE as error function')
+            self._log.debug('Using SSE as error function')
             cost = tensor.sum(pow((self._label_matrix - output), 2))
 
         params = weight_matrix
@@ -305,7 +305,7 @@ class ANN(object):
             tr_input_data = np.append(tr_input_data, self.test_input_data, axis=0)
             tr_input_labels = np.append(tr_input_labels, self.test_correct_labels, axis=0)
 
-        errors = []
+        errors, correctness_matrix = [], []
         for i in range(epochs):
             start_range = range(0, len(tr_input_data), self._config['training_batch_size'])
             end_range = range(
@@ -320,11 +320,13 @@ class ANN(object):
                 error += self._train(tr_input_data[start:end], tr_input_labels[start:end])
             errors.append(error)
 
+            correctness = np.mean(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data))
+            correctness_matrix.append(correctness)
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.info(
                 'Epoch (%d/%d) trained with correctness: %.4f (Elapsed time: %.2fs)' % (
                     i + 1, epochs,
-                    np.mean(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)),
+                    correctness,
                     time.time() - start_time
                 )
             )
@@ -332,7 +334,7 @@ class ANN(object):
         if visualize:
             visualize_errors(errors)
 
-        return errors
+        return errors, correctness_matrix
 
     def predict(self, *args):
         """

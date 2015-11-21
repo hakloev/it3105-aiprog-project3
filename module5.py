@@ -58,19 +58,19 @@ ANN_CONFIGURATIONS = [
 ]
 
 
-def do_ann_analysis(epochs=20):
-    for config in ANN_CONFIGURATIONS:
-        do_single_ann_analysis(config, epochs=epochs)
+def do_ann_analysis(configurations, **kwargs):
+    for config in configurations:
+        do_single_ann_analysis(config, **kwargs)
 
 
-def do_single_ann_analysis(config, epochs=20):
+def do_single_ann_analysis(config, epochs=20, do_welch_test=False, write_statistics=False):
     layer_struct = config['layer_structure']
     af = config['activation_functions']
     conf = config['config']
 
     a = ANN(layer_struct, af, config=conf)
     a.load_input_data()
-    errors = a.train(epochs=epochs, visualize=False)
+    errors, correctness = a.train(epochs=epochs, visualize=False)
     log.debug('ANN average error: %.4f' % np.mean(errors))
 
     training_correctness = np.mean(np.argmax(a.train_correct_labels, axis=1) == a.predict(a.train_input_data))
@@ -79,14 +79,19 @@ def do_single_ann_analysis(config, epochs=20):
     log.info('ANN correctness on training data: %.4f' % training_correctness)
     log.info('ANN correctness on testing data: %.4f' % testing_correctness)
 
-    with open('analysis.txt', 'a') as file:
-        statistics = '%s\n%.4f\n%.4f\n%s\n-\n' % (
-            str(a),
-            training_correctness,
-            testing_correctness,
-            repr(errors)
-        )
-        file.write(statistics)
+    if write_statistics:
+        with open('analysis.txt', 'a') as file:
+            statistics = '%s\n%.4f\n%.4f\n%s\n%s\n-\n' % (
+                str(a),
+                training_correctness,
+                testing_correctness,
+                repr(correctness),
+                repr(errors)
+            )
+            file.write(statistics)
+
+    if do_welch_test:
+        mnist_basics.minor_demo(a)
 
 if __name__ == "__main__":
 
@@ -94,12 +99,12 @@ if __name__ == "__main__":
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
-    # Do analysis on all ann configurations
-    # do_ann_analysis()
+    # Do analysis on all but the last ann configuration
+    do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
 
     # Do analysis on same net, but with SSE vs Crossentropy
-    do_single_ann_analysis(ANN_CONFIGURATIONS[-2])
-    do_single_ann_analysis(ANN_CONFIGURATIONS[-1])
+    # do_single_ann_analysis(ANN_CONFIGURATIONS[-2])
+    # do_single_ann_analysis(ANN_CONFIGURATIONS[-1])
 
     """
     # Network structure
@@ -124,18 +129,6 @@ if __name__ == "__main__":
 
     if DO_BLIND_TEST:
         mnist_basics.minor_demo(a)
-    """
-
-    """
-    feature_sets, feature_labels = mnist_basics.gen_flat_cases(digits=numpy.arange(10), type='testing')
-    feature_labels = feature_labels[:10]
-
-    blind_test_result = a.blind_test(feature_sets[:10])
-    # Can't do intersection, since order of list matter
-    correct_result = [i for i, j in zip(blind_test_result, feature_labels) if i == j]
-
-    log.debug("Returned: %s Actual %s " % (blind_test_result, feature_labels))
-    log.info("Number of correct guesses: %i" % len(correct_result))
     """
 
     """
