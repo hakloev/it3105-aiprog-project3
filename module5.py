@@ -57,23 +57,26 @@ ANN_CONFIGURATIONS = [
 ]
 
 
-def do_ann_analysis(configurations, **kwargs):
-    for config in configurations:
-        do_single_ann_analysis(config, **kwargs)
-
-
-def do_single_ann_analysis(config, epochs=20, do_welch_test=False, write_statistics=False):
+def get_ann_network_from_config(config):
     layer_struct = config['layer_structure']
     af = config['activation_functions']
     conf = config['config']
 
-    a = ANN(layer_struct, af, config=conf)
-    a.load_input_data()
-    errors, correctness = a.train(epochs=epochs, visualize=False)
+    return ANN(layer_struct, af, config=conf)
+
+
+def do_ann_analysis(configurations, **kwargs):
+    for config in configurations:
+        do_single_ann_analysis(get_ann_network_from_config(config), **kwargs)
+
+
+def do_single_ann_analysis(ann, epochs=20, do_welch_test=False, write_statistics=False):
+    ann.load_input_data(normalize=True)
+    errors, correctness = ann.train(epochs=epochs, visualize=False)
     log.debug('ANN average error: %.4f' % np.mean(errors))
 
-    training_correctness = np.mean(np.argmax(a.train_correct_labels, axis=1) == a.predict(a.train_input_data))
-    testing_correctness = np.mean(np.argmax(a.test_correct_labels, axis=1) == a.predict(a.test_input_data))
+    training_correctness = np.mean(np.argmax(ann.train_correct_labels, axis=1) == ann.predict(ann.train_input_data))
+    testing_correctness = np.mean(np.argmax(ann.test_correct_labels, axis=1) == ann.predict(ann.test_input_data))
 
     log.info('ANN correctness on training data: %.4f' % training_correctness)
     log.info('ANN correctness on testing data: %.4f' % testing_correctness)
@@ -81,7 +84,7 @@ def do_single_ann_analysis(config, epochs=20, do_welch_test=False, write_statist
     if write_statistics:
         with open('analysis.txt', 'a') as file:
             statistics = '%s\n%.4f\n%.4f\n%s\n%s\n-\n' % (
-                str(a),
+                str(ann),
                 training_correctness,
                 testing_correctness,
                 repr(correctness),
@@ -90,7 +93,8 @@ def do_single_ann_analysis(config, epochs=20, do_welch_test=False, write_statist
             file.write(statistics)
 
     if do_welch_test:
-        mnist_basics.minor_demo(a)
+        mnist_basics.minor_demo(ann)
+
 
 if __name__ == "__main__":
 
@@ -98,26 +102,34 @@ if __name__ == "__main__":
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
+    """
     # Do analysis on all but the last ann configuration
     # do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
     do_ann_analysis(
-        [ANN_CONFIGURATIONS[4]],
+        ANN_CONFIGURATIONS,
         epochs=20,
         do_welch_test=True,
         write_statistics=True
     )
+    """
+
+    #  Analyse 20 runs of demo100 set
+    data100, labels100 = mnist_basics.load_flat_text_cases('demo100_text.txt')
+    correctness = []
+    for run in range(5):
+        a = get_ann_network_from_config(ANN_CONFIGURATIONS[0])
+        a.load_input_data(normalize=True)
+        a.train(epochs=20, include_test_set=False, visualize=False)
+        results = a.blind_test(data100) # Automatic normalize
+        correct_result = [i for i, j in zip(results, labels100) if i == j]
+        log.info('Run %i gave correctness of %i' % (run + 1, len(correct_result)))
+        correctness.append(len(correct_result) / 100)
+
+    log.info('Average correctness: %.4f' % np.mean(correctness))
 
     """
-    # Network structure
-    # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
-    # Example: [784, 620, 100, 10]
-    layer_structure = [784, 620, 10]
-    # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, softmax]
-    cfg = {'learning_rate': 0.002}
-
     # Create a network using the default parameters
-    a = ANN(layer_structure, activation_functions, config=cfg)
+    a = get_ann_network_from_config(ANN_CONFIGURATIONS[0])
     a.load_input_data()
 
     train_data_cache = a.train_input_data
@@ -126,7 +138,7 @@ if __name__ == "__main__":
     test_labels_cache = a.test_correct_labels
 
     # Train a bit and perform blind test
-    a.train(epochs=10, include_test_set=False, visualize=False)
+    a.train(epochs=20, include_test_set=False, visualize=False)
 
     if DO_BLIND_TEST:
         mnist_basics.minor_demo(a)
