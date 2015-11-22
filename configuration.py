@@ -1,3 +1,5 @@
+import os
+
 LOG_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -12,7 +14,7 @@ LOG_CONFIG = {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'default',
-            'filename': 'debug.log',
+            'filename': os.path.join(os.path.dirname(__name__), 'logs', 'debug.log'),
             'maxBytes': 1024 * 1024 * 10,
             'backupCount': 1
         }

@@ -4,10 +4,9 @@ __pycache__
 *.so
 *.log
 .idea/
-log/
+logs/debug.*
+module5/analysis/analysis.*
 module5/mnist/all_flat_mnist_*_cases_text.*
 module5/mnist/demotest/all_flat_mnist_*_cases_text.txt
 module6/data/*
 *.txt
-debug.log*
-analysis.txt.*

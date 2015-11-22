@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+import os
 import logging
 from logging.config import dictConfig
 from configuration import LOG_CONFIG
@@ -9,6 +10,7 @@ from module5.mnist import mnist_basics
 from module5.ann import ANN, rectify, softmax, sigmoid, softplus
 
 DO_BLIND_TEST = False
+__ANALYSIS_PATH__ = os.path.realpath(os.path.dirname(__name__)) + '/module5/analysis/'
 
 ANN_CONFIGURATIONS = [
     {
@@ -82,7 +84,7 @@ def do_single_ann_analysis(ann, epochs=20, do_welch_test=False, write_statistics
     log.info('ANN correctness on testing data: %.4f' % testing_correctness)
 
     if write_statistics:
-        with open('analysis.txt', 'a') as file:
+        with open(__ANALYSIS_PATH__ + 'analysis.txt', 'a') as file:
             statistics = '%s\n%.4f\n%.4f\n%s\n%s\n-\n' % (
                 str(ann),
                 training_correctness,
@@ -102,21 +104,20 @@ if __name__ == "__main__":
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
-    """
     # Do analysis on all but the last ann configuration
     # do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
     do_ann_analysis(
-        ANN_CONFIGURATIONS,
+        ANN_CONFIGURATIONS[:-1],
         epochs=20,
         do_welch_test=True,
         write_statistics=True
     )
-    """
 
+    """
     #  Analyse 20 runs of demo100 set
     data100, labels100 = mnist_basics.load_flat_text_cases('demo100_text.txt')
     correctness = []
-    for run in range(5):
+    for run in range(30):
         a = get_ann_network_from_config(ANN_CONFIGURATIONS[0])
         a.load_input_data(normalize=True)
         a.train(epochs=20, include_test_set=False, visualize=False)
@@ -125,7 +126,9 @@ if __name__ == "__main__":
         log.info('Run %i gave correctness of %i' % (run + 1, len(correct_result)))
         correctness.append(len(correct_result) / 100)
 
+    log.debug('Correctness for all runs: %s' % repr(correctness))
     log.info('Average correctness: %.4f' % np.mean(correctness))
+    """
 
     """
     # Create a network using the default parameters
