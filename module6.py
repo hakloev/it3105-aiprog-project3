@@ -6,48 +6,13 @@ import logging
 import sys
 from logging.config import dictConfig
 
+from config.configuration import LOG_CONFIG
 from module5.ann import ANN, rectify, softmax
-from module6.storage import Games, transform
-from module6.points import calculate_points, create_run_lists
-from module6.control.browser import BrowserController, BrowserControllerRandom
+from module6.control.browser import BrowserController
 from module6.control.java_client_adapter import JavaAdapter
 from module6.demo.ai2048demo import welch
-
-
-LOG_CONFIG = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'default',
-            'stream': 'ext://sys.stdout'
-        },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'default',
-            'filename': 'debug.log',
-            'maxBytes': 1024 * 1024 * 10,
-            'backupCount': 1
-        }
-    },
-    'formatters': {
-        'default': {
-            'format': '[%(asctime)s] %(levelname)s %(name)s.%(funcName)s:%(lineno)d %(message)s'
-        }
-    },
-    'loggers': {
-        '': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True
-        }
-    }
-}
-
-log = logging.getLogger(__name__)
+from module6.points import create_run_lists
+from module6.storage import Games
 
 
 def load_raw_and_save(alternate=False, num_games=16, only_successful=False, discrete=False, vectorlength=16):
@@ -187,9 +152,14 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
 
 
 if __name__ == "__main__":
+    log = logging.getLogger(__name__)
 
     # load_train_and_play_game(epochs=10, vectorlength=64)
 
+    # load_train_and_play_game(epochs=100, vectorlength=16)
     # load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
 
-    load_train_and_store_stats(epochs=30, vectorlength=64, runs=20)
+    load_train_and_store_stats(epochs=50, vectorlength=64, runs=20)
+
+    # load_train_and_store_stats(epochs=2, vectorlength=16, runs=20)
+

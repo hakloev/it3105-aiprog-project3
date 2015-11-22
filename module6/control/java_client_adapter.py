@@ -16,6 +16,7 @@ RECV_BYTE_SIZE = 1024
 DEFAULT_FILENAME = 'play_statistics.txt'
 HOST = 'localhost'
 PORT = 57315
+__statistics_path__ = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'statistics/')
 
 
 class JavaAdapter(object):
@@ -46,7 +47,7 @@ class JavaAdapter(object):
         results = []
 
         # Clear the file
-        with open(self.stats_filename, 'w') as f:
+        with open(__statistics_path__ + self.stats_filename, 'w') as f:
             f.write('')
 
         for i in range(runs):
@@ -63,7 +64,7 @@ class JavaAdapter(object):
                     self._log.debug('Game ended. Max tile was: %d' % max_tile)
 
                     results.append(max_tile)
-                    with open(os.path.join('.', self.stats_filename), 'a') as f:
+                    with open(__statistics_path__ + self.stats_filename, 'a') as f:
                         f.write("%d\n" % max_tile)
 
                     if max_tile == 2048 and stop_at_win:

@@ -4,6 +4,7 @@ import logging
 import time
 
 import numpy as np
+import matplotlib.pyplot as plt
 import theano
 from theano import tensor
 
@@ -17,9 +18,15 @@ NETWORK_CONFIG = {
     'max_training_runs': 20,
     'max_test_runs': 5,
     'training_batch_size': 512,
+    'error_function': 'sse',
     'rho': 0.9,
     'epsilon': 1e-6,
     'normalize_max_value': 255.
+}
+
+ERROR_FUNCTIONS = {
+    1: 'Crossentropy',
+    2: 'SSE'
 }
 
 # SETTINGS
@@ -54,6 +61,14 @@ def rectify(x):
     """
 
     return tensor.maximum(x, 0.)
+
+def softplus(x):
+    """
+    Performs the softplus function on the value x
+    :param x: The dot product between two vectors
+    :return: Softplus value
+    """
+    return tensor.nnet.softplus(x)
 
 
 def softmax(x):
@@ -198,6 +213,8 @@ class ANN(object):
 
         self._log = logging.getLogger(__name__)
         self._log.info('Initializing Neural Network...')
+        self._layer_structure = layer_structure
+        self._activation_functions = activation_functions
         self.train_input_data = []
         self.train_correct_labels = []
         self.test_input_data = []
@@ -214,14 +231,7 @@ class ANN(object):
         self._config.update(config)
 
         self._log.info(
-            'Layers: %s, Activation functions: %s, LR: %.5f, MTR: %d, MTE: %d, TRBS: %d.' % (
-                repr(layer_structure),
-                repr(activation_functions),
-                self._config['learning_rate'],
-                self._config['max_training_runs'],
-                self._config['max_test_runs'],
-                self._config['training_batch_size']
-            )
+            self.__str__()
         )
 
         self._generate_network(layer_structure, activation_functions)
@@ -260,7 +270,15 @@ class ANN(object):
 
         # Set up the output vector function
         output_function = tensor.argmax(output, axis=1)
-        cost = tensor.sum(pow((self._label_matrix - output), 2))
+        # Check if error function is crossentropy
+        if self._config['error_function'] == ERROR_FUNCTIONS[1]:
+            self._log.debug('Using crossentropy as error function')
+            cost = tensor.mean(tensor.nnet.categorical_crossentropy(output, self._label_matrix))
+        else:
+            # Default error function is SSE
+            self._log.debug('Using SSE as error function')
+            cost = tensor.sum(pow((self._label_matrix - output), 2))
+
         params = weight_matrix
         # Updatefunction is backpropagaction algorithm using the specified error correction function
         updates = rms_prop(cost, params)
@@ -277,11 +295,17 @@ class ANN(object):
         # Inject the prediction function that us used by self.predict_all(*args)
         self._predict_all = theano.function(inputs=[self._data_matrix], outputs=output, allow_input_downcast=True)
 
-    def train(self, epochs=0, include_test_set=False):
+    def train(self, epochs=0, include_test_set=False, visualize=False):
         """
         Train this network given a data
         :param epochs: The amount of iterations of training that should be done. Uses config training batch size.
         """
+        def visualize_errors(err):
+            plt.plot(list(map(lambda x: x + 1, range(epochs))), err, '--bo')
+            plt.ylabel('Errors')
+            plt.xlabel('Epochs')
+            plt.title('Errors over time')
+            plt.show()
 
         self._log.info('Networking training initiated...')
         start_time = time.time()
@@ -295,9 +319,8 @@ class ANN(object):
             tr_input_data = np.append(tr_input_data, self.test_input_data, axis=0)
             tr_input_labels = np.append(tr_input_labels, self.test_correct_labels, axis=0)
 
+        errors, correctness_matrix = [], []
         for i in range(epochs):
-            self._log.info('Training epoch: %d of %d' % (i + 1, epochs))
-
             start_range = range(0, len(tr_input_data), self._config['training_batch_size'])
             end_range = range(
                 self._config['training_batch_size'],
@@ -305,17 +328,27 @@ class ANN(object):
                 self._config['training_batch_size']
             )
 
+            error = 0
             # Perform the actual training
             for start, end in zip(start_range, end_range):
-                self._train(tr_input_data[start:end], tr_input_labels[start:end])
+                error += self._train(tr_input_data[start:end], tr_input_labels[start:end])
+            errors.append(error)
 
+            correctness = np.mean(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data))
+            correctness_matrix.append(correctness)
             # Assess the correctness of the network on the entire test set after this epoch
             self._log.info(
-                'Epoch trained with correctness: %.4f (Elapsed time: %.2fs)' % (
-                    np.mean(np.argmax(self.test_correct_labels, axis=1) == self.predict(self.test_input_data)),
+                'Epoch (%d/%d) trained with correctness: %.4f (Elapsed time: %.2fs)' % (
+                    i + 1, epochs,
+                    correctness,
                     time.time() - start_time
                 )
             )
+
+        if visualize:
+            visualize_errors(errors)
+
+        return errors, correctness_matrix
 
     def predict(self, *args):
         """
@@ -323,7 +356,6 @@ class ANN(object):
         :param args: An input data vector
         :return: A labelvector the network has generated based off of the input vector
         """
-
         return self._predict(*args)
 
     def predict_all(self, *args):
@@ -407,6 +439,18 @@ class ANN(object):
         """
 
         return raw_results.tolist()
+
+    def __str__(self):
+        return 'Layers: %s, Activation functions: %s, LR: %.5f, ERROR: %s, MTR: %d, MTE: %d, TRBS: %d.' % (
+            repr(self._layer_structure),
+            repr([func.__name__ for func in self._activation_functions]),
+            self._config['learning_rate'],
+            self._config['error_function'],
+            self._config['max_training_runs'],
+            self._config['max_test_runs'],
+            self._config['training_batch_size']
+        )
+
 
     @staticmethod
     def vectorize_labels(labels, num_categories):

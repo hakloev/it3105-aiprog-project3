@@ -201,3 +201,25 @@ def minor_demo(ann,ignore=0):
     print('Demo 100 set: \n ',test_it(ann,demo100,8))
 
 
+def minor_demo_hakloev(ann,ignore=0):
+    def score_it(classification,k=4):
+        params = {"results": str(ignore) + " " + str(classification), "raw": "1","k": k}
+        resp = requests.post('http://folk.ntnu.no/valerijf/5/', data=params)
+        return resp.text
+
+    def test_it(ann,cases,k=4):
+        images,_ = cases
+        predictions = ann.blind_test(images)  # Students must write THIS method for their ANN
+        return score_it(predictions,k=k)
+
+    demo100 = load_flat_text_cases('demo100_text.txt')
+    training_cases = load_flat_text_cases('all_flat_mnist_training_cases_text.txt')
+    test_cases = load_flat_text_cases('all_flat_mnist_testing_cases_text.txt')
+
+    train = test_it(ann, training_cases, 4)
+    test = test_it(ann, test_cases, 4)
+    demo = test_it(ann, demo100, 8)
+
+    return [train, test, demo]
+
+
