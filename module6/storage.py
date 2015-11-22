@@ -10,6 +10,7 @@ import numpy as np
 from os import path
 import pickle
 import time
+from math import log as ln
 
 from module6.control.gamectrl import apply_move
 
@@ -157,7 +158,8 @@ def load_raw_game_data(games=1, only_successful=False):
 
             # If we have EOF or game separator character
             if not line or line == '-':
-                game_list.append((boards, moves))
+                if boards:
+                    game_list.append((boards, moves))
 
                 if len(game_list) == games:
                     return finalize(game_list)
@@ -191,7 +193,20 @@ def load_raw_game_data(games=1, only_successful=False):
         return finalize(game_list)
 
 
-def transform(board, discrete=False):
+def transform(board):
+    snake = [
+        1, 128, 256, 32768,
+        2, 64, 512, 16384,
+        4, 32, 1024, 8192,
+        8, 16, 2048, 4096
+    ]
+    gradient = [
+        8, 16, 32, 128,
+        4, 8, 24, 64,
+        2, 4, 16, 32,
+        1, 2, 8, 16
+    ]
+
     alternate = np.zeros((64,), dtype=float)
     b = np.array(board).reshape((4, 4))
     moved_states = [
@@ -203,29 +218,15 @@ def transform(board, discrete=False):
     for i, state in enumerate(moved_states):
         for x, val in enumerate(state):
             if not val:
-                val = 0
-            alternate[i * 16 + x] = val
+                alternate[i * 16 + x] = 0
+            else:
+                alternate[i * 16 + x] = ln(val * gradient[x])
 
-    for y in range(4):
-        for x in range(4):
-            i = y * 4 + x - 1
-            left = y * 4 + x - 1
-            right = y * 4 + x + 1
-            top = y * 4 + x - 4
-            bottom = y * 4 + x + 4
-            directions = [left, bottom, right, top]
-            # Calculates the sum of fractions for each neighboring pair (each direction) for all cells
-            for z, direction in enumerate(directions):
-                try:
-                    if discrete:
-                        if board[i] != 0 and board[i] == board[direction]:
-                            alternate[48 + i] += z
-                    else:
-                        alternate[48 + i] += min(board[i], board[direction]) / max(board[i], board[direction])
-                except IndexError:
-                    pass
-                except ZeroDivisionError:
-                    pass
+    for i, val in enumerate(board):
+        if val:
+            alternate[48 + i] = ln(val * gradient[i])
+        else:
+            alternate[48 + i] = val
 
     return alternate
 
@@ -283,7 +284,8 @@ class Games(object):
 
         for boards, labels in load_raw_game_data(games=num_games, only_successful=only_successful):
             assert len(boards) == len(labels)
-
+            if len(boards) == 0:
+                continue
             logging.getLogger(__name__).debug(
                 'Adding game with %d moves and highest score: %d' % (len(labels), max(boards[-1]))
             )
@@ -307,7 +309,7 @@ class Games(object):
         """
 
         log = logging.getLogger(__name__)
-        log.debug('Flattening datastructure...')
+        log.info('Flattening datastructure...')
 
         if self.games_flat is None and self.labels_flat is None:
             out_games = np.array([], dtype='uint32')
@@ -326,7 +328,7 @@ class Games(object):
 
         return self.games_flat, self.labels_flat
 
-    def transform_to_alternate_representation(self, discrete=False):
+    def transform_to_alternate_representation(self):
         """
         Converts the board vectors to a different representation based on some metric
         """
@@ -334,9 +336,28 @@ class Games(object):
         log = logging.getLogger(__name__)
         log.info('Transforming boards to alternate representation...')
 
-        self.games['boards'] = [
-            [transform(board, discrete=discrete) for board in game] for game in self.games['boards']
-        ]
+        new_format = []
+        self.games_flat = []
+        total_games = len(self.games['boards'])
+        for i, game in enumerate(self.games['boards']):
+            if i % 10 == 0:
+                print('Transforming game %d of %d' % (i, total_games))
+
+            g = [transform(board) for board in game]
+            new_format.append(g)
+            self.games_flat.extend(g)
+
+        self.games['boards'] = new_format
+        print('Completed transforming games')
+
+        # Update the flat version as well
+        self.games_flat = np.array(self.games_flat)
+        out_labels = np.array([], dtype='uint32')
+        print('Starting on labels')
+        for label_set in self.games['moves']:
+            out_labels = np.append(out_labels, np.array(label_set))
+        out_labels.flatten()
+        self.labels_flat = out_labels
 
     def load(self, test=False):
         """
@@ -360,7 +381,7 @@ class Games(object):
         """
 
         log = logging.getLogger(__name__)
-        log.info('Compressing datastructure... [Test: %s] (This may take a while depending on set size!' % test)
+        log.info('Compressing datastructure... [Test: %s] This may take a while depending on set size!' % test)
         start_time = time.time()
 
         if test:
