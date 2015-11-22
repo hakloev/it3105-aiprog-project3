@@ -10,7 +10,7 @@ from module5.mnist import mnist_basics
 from module5.ann import ANN, rectify, softmax, sigmoid, softplus
 
 DO_BLIND_TEST = False
-__ANALYSIS_PATH__ = os.path.realpath(os.path.dirname(__name__)) + '/module5/analysis/'
+__analysis_path__ = os.path.realpath(os.path.dirname(__name__)) + '/module5/analysis/'
 
 ANN_CONFIGURATIONS = [
     {
@@ -84,7 +84,7 @@ def do_single_ann_analysis(ann, epochs=20, do_welch_test=False, write_statistics
     log.info('ANN correctness on testing data: %.4f' % testing_correctness)
 
     if write_statistics:
-        with open(__ANALYSIS_PATH__ + 'analysis.txt', 'a') as file:
+        with open(__analysis_path__ + 'analysis.txt', 'a') as file:
             statistics = '%s\n%.4f\n%.4f\n%s\n%s\n-\n' % (
                 str(ann),
                 training_correctness,

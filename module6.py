@@ -158,8 +158,8 @@ if __name__ == "__main__":
     result = welch(*create_run_lists())
     print('%s' % result)
     """
-    load_train_and_play_game(epochs=100, vectorlength=16)
+    #load_train_and_play_game(epochs=100, vectorlength=16)
 
     # load_raw_and_save(discrete=True, only_successful=False, num_games=1024, vectorlength=16)
 
-    # load_train_and_store_stats(epochs=100, vectorlength=16, runs=20)
+    load_train_and_store_stats(epochs=2, vectorlength=16, runs=20)
