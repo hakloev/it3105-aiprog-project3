@@ -55,7 +55,7 @@ class BrowserController(object):
         # self._log.debug("Best move is %i" % best_move[0])
 
         if self._vec_len != 16:
-            board = transform(board, discrete=True)
+            board = transform(board)
 
         best_move_all = self._NET.predict_all([board])  # Returns a list of all moves and their probability
         self._log.debug("All moves probability %s" % best_move_all)
