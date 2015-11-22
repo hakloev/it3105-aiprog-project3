@@ -83,19 +83,21 @@ def do_single_ann_analysis(ann, epochs=20, do_welch_test=False, write_statistics
     log.info('ANN correctness on training data: %.4f' % training_correctness)
     log.info('ANN correctness on testing data: %.4f' % testing_correctness)
 
+    points = []
+    if do_welch_test:
+        points = mnist_basics.minor_demo_hakloev(ann)
+
     if write_statistics:
         with open(__analysis_path__ + 'analysis.txt', 'a') as file:
-            statistics = '%s\n%.4f\n%.4f\n%s\n%s\n-\n' % (
+            statistics = '%s\nTrain: %.4f\nTest: %.4f\nComplete demo: %s\n%s\n%s\n-\n' % (
                 str(ann),
                 training_correctness,
                 testing_correctness,
+                repr(points),
                 repr(correctness),
                 repr(errors)
             )
             file.write(statistics)
-
-    if do_welch_test:
-        mnist_basics.minor_demo(ann)
 
 
 if __name__ == "__main__":
