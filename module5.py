@@ -1,13 +1,14 @@
 # -*- encoding: utf-8 -*-
 
-import os
 import logging
+import os
 from logging.config import dictConfig
-from configuration import LOG_CONFIG
+
 import numpy as np
 
-from module5.mnist import mnist_basics
+from config.configuration import LOG_CONFIG
 from module5.ann import ANN, rectify, softmax, sigmoid, softplus
+from module5.mnist import mnist_basics
 
 DO_BLIND_TEST = False
 __analysis_path__ = os.path.realpath(os.path.dirname(__name__)) + '/module5/analysis/'

@@ -5,14 +5,14 @@
 import logging
 import sys
 from logging.config import dictConfig
-from configuration import LOG_CONFIG
 
+from config.configuration import LOG_CONFIG
 from module5.ann import ANN, rectify, softmax
-from module6.storage import Games, transform
-from module6.points import calculate_points, create_run_lists
-from module6.control.browser import BrowserController, BrowserControllerRandom
+from module6.control.browser import BrowserController
 from module6.control.java_client_adapter import JavaAdapter
 from module6.demo.ai2048demo import welch
+from module6.points import create_run_lists
+from module6.storage import Games
 
 
 def load_raw_and_save(alternate=False, num_games=16, only_successful=False, discrete=False, vectorlength=16):
