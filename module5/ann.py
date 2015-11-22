@@ -24,6 +24,11 @@ NETWORK_CONFIG = {
     'normalize_max_value': 255.
 }
 
+ERROR_FUNCTIONS = {
+    1: 'Crossentropy',
+    2: 'SSE'
+}
+
 # SETTINGS
 DATASET_DIR = 'module5'
 
@@ -265,7 +270,8 @@ class ANN(object):
 
         # Set up the output vector function
         output_function = tensor.argmax(output, axis=1)
-        if self._config['error_function'] == 'Crossentropy':
+        # Check if error function is crossentropy
+        if self._config['error_function'] == ERROR_FUNCTIONS[1]:
             self._log.debug('Using crossentropy as error function')
             cost = tensor.mean(tensor.nnet.categorical_crossentropy(output, self._label_matrix))
         else:

@@ -7,7 +7,7 @@ from logging.config import dictConfig
 import numpy as np
 
 from config.configuration import LOG_CONFIG
-from module5.ann import ANN, rectify, softmax, sigmoid, softplus
+from module5.ann import ANN, rectify, softmax, sigmoid, softplus, ERROR_FUNCTIONS
 from module5.mnist import mnist_basics
 
 DO_BLIND_TEST = False
@@ -15,46 +15,43 @@ __analysis_path__ = os.path.realpath(os.path.dirname(__name__)) + '/module5/anal
 
 ANN_CONFIGURATIONS = [
     {
+        'layer_structure': [784, 1156, 784, 10],
+        'activation_functions': [rectify, rectify, rectify, softmax],
+        'config': {
+            'learning_rate': 0.001,
+            'error_function': ERROR_FUNCTIONS[1]
+        }
+    },
+    {
+        'layer_structure': [784, 1568, 784, 10],
+        'activation_functions': [rectify, rectify, rectify, softmax],
+        'config': {
+            'learning_rate': 0.001,
+            'error_function': ERROR_FUNCTIONS[1]
+        }
+    },
+    {
         'layer_structure': [784, 620, 10],
         'activation_functions': [rectify, rectify, softmax],
         'config': {
-            'learning_rate': 0.001
+            'learning_rate': 0.001,
+            'error_function': ERROR_FUNCTIONS[1]
         }
     },
     {
         'layer_structure': [784, 620, 10],
         'activation_functions': [sigmoid, softplus, softmax],
         'config': {
-            'learning_rate': 0.001
+            'learning_rate': 0.001,
+            'error_function': ERROR_FUNCTIONS[1]
         }
     },
     {
         'layer_structure': [784, 392, 10],
         'activation_functions': [softplus, softplus, softmax],
         'config': {
-            'learning_rate': 0.005
-        }
-    },
-    {
-        'layer_structure': [784, 112, 10],
-        'activation_functions': [rectify, sigmoid, softmax],
-        'config': {
-            'learning_rate': 0.005
-        }
-    },
-    {
-        'layer_structure': [784, 1568, 1176, 10],
-        'activation_functions': [rectify, rectify, rectify, softmax],
-        'config': {
-            'learning_rate': 0.0001
-        }
-    },
-    {
-        'layer_structure': [784, 620, 310, 10],
-        'activation_functions': [rectify, rectify, rectify, softmax],
-        'config': {
-            'learning_rate': 0.001,
-            'error_function': 'Crossentropy'
+            'learning_rate': 0.005,
+            'error_function': ERROR_FUNCTIONS[1]
         }
     }
 ]
@@ -87,6 +84,7 @@ def do_single_ann_analysis(ann, epochs=20, do_welch_test=False, write_statistics
     points = []
     if do_welch_test:
         points = mnist_basics.minor_demo_hakloev(ann)
+    log.debug('Complete demo: %s' % repr(points))
 
     if write_statistics:
         with open(__analysis_path__ + 'analysis.txt', 'a') as file:
@@ -110,18 +108,18 @@ if __name__ == "__main__":
     # Do analysis on all but the last ann configuration
     # do_ann_analysis(ANN_CONFIGURATIONS[:-1], epochs=20, do_welch_test=True, write_statistics=True)
     do_ann_analysis(
-        ANN_CONFIGURATIONS[:-1],
-        epochs=20,
+        [ANN_CONFIGURATIONS[0]],
+        epochs=40,
         do_welch_test=True,
-        write_statistics=True
+        write_statistics=False
     )
 
     """
     #  Analyse 20 runs of demo100 set
     data100, labels100 = mnist_basics.load_flat_text_cases('demo100_text.txt')
     correctness = []
-    for run in range(30):
-        a = get_ann_network_from_config(ANN_CONFIGURATIONS[0])
+    for run in range(10):
+        a = get_ann_network_from_config(ANN_CONFIGURATIONS[4])
         a.load_input_data(normalize=True)
         a.train(epochs=20, include_test_set=False, visualize=False)
         results = a.blind_test(data100) # Automatic normalize
