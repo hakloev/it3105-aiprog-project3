@@ -81,7 +81,7 @@ def load_train_and_play_game(epochs=500, vectorlength=16):
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 128, 96, 64, 32, 4]
+    layer_structure = [vectorlength, 192, 128, 96, 64, 4]
     # Example: [rectify, rectify, softmax]
     activation_functions = [rectify, rectify, rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
@@ -114,7 +114,7 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 128, 96, 64, 32, 4]
+    layer_structure = [vectorlength, 192, 128, 96, 64, 4]
     # Example: [rectify, rectify, softmax]
     activation_functions = [rectify, rectify, rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
@@ -154,11 +154,12 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
 if __name__ == "__main__":
     log = logging.getLogger(__name__)
 
-    load_train_and_play_game(epochs=20, vectorlength=64)
+    # load_train_and_play_game(epochs=20, vectorlength=64)
 
     # load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
 
-    # load_train_and_store_stats(epochs=50, vectorlength=64, runs=20)
-
-    # load_train_and_store_stats(epochs=2, vectorlength=16, runs=20)
-
+    load_train_and_store_stats(epochs=5, vectorlength=64, runs=5)
+    load_train_and_store_stats(epochs=10, vectorlength=64, runs=5)
+    load_train_and_store_stats(epochs=15, vectorlength=64, runs=5)
+    load_train_and_store_stats(epochs=20, vectorlength=64, runs=5)
+    load_train_and_store_stats(epochs=25, vectorlength=64, runs=5)

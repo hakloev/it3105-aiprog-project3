@@ -177,9 +177,9 @@ class Keyboard2048Control(Generic2048Control):
         key = [38, 39, 40, 37][move]
         self._log.debug("Key %i Move %i" % (key, move))
         self.send_key_event('keydown', key)
-        time.sleep(0.005)
+        time.sleep(0.001)
         self.send_key_event('keyup', key)
-        time.sleep(0.005)
+        time.sleep(0.001)
 
 
 class Hybrid2048Control(Fast2048Control, Keyboard2048Control):
