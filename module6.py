@@ -100,8 +100,8 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
 
     # Setup
-    veclength = 16
-    load_raw_and_save(alternate=False, only_successful=False, num_games=2048, vectorlength=veclength)
+    veclength = 48
+    # load_raw_and_save(alternate=False, only_successful=False, num_games=2048, vectorlength=veclength)
     a = load_and_train(epochs=30, vectorlength=veclength)
 
     # Start main loop
