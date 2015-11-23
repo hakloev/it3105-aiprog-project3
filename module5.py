@@ -107,8 +107,8 @@ def do_single_ann_analysis(ann, epochs=20, do_welch_test=False, write_statistics
             file.write(statistics)
 
 
-def do_demo_procedure(r, epochs=20, d=__mnist_path__):
-    ann = get_ann_network_from_config(ANN_CONFIGURATIONS[2])
+def do_demo_procedure(r, ann_config=2, epochs=20, d=__mnist_path__):
+    ann = get_ann_network_from_config(ANN_CONFIGURATIONS[ann_config])
     ann.load_input_data(normalize=True)
     ann.train(epochs)
     mnist_basics.minor_demo(ann)
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
-    do_demo_procedure(10, epochs=25)
+    do_demo_procedure(8, ann_config=2, epochs=25)
 
     """
     # Do analysis on all but the last ann configuration
