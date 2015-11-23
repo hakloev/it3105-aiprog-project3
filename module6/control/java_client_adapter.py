@@ -59,7 +59,7 @@ class JavaAdapter(object):
                 board = board.strip()
 
                 # The right or statement below is a dirty hack since the last receive is 'END' + a board state
-                if board == 'END' or board.split()[0] == 'END':
+                if board == 'END':  # or board.split()[0] == 'END':
                     max_tile = max(last_board[0])
                     self._log.debug('Game ended. Max tile was: %d' % max_tile)
 
