@@ -7,7 +7,7 @@ import sys
 from logging.config import dictConfig
 
 from config.configuration import LOG_CONFIG
-from module5.ann import ANN, rectify, softmax
+from module5.ann import ANN, rectify, softmax, ERROR_FUNCTIONS
 from module6.control.browser import BrowserController
 from module6.control.java_client_adapter import JavaAdapter
 from module6.demo.ai2048demo import welch
@@ -95,7 +95,6 @@ def load_train_and_store_stats(net, runs=10, **kwargs):
 
 
 if __name__ == "__main__":
-
     # Set up logging
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
