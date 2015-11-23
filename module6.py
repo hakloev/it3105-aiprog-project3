@@ -114,7 +114,7 @@ if __name__ == "__main__":
         choice = input('Enter your choice: ')
 
         if choice == '1':
-            load_train_and_store_stats(a, runs=20, vectorlength=veclength)
+            load_train_and_store_stats(a, runs=3, vectorlength=veclength)
         elif choice == '2':
             load_train_and_play_game(a, vectorlength=veclength)
         else:
