@@ -15,14 +15,12 @@ from module6.points import create_run_lists
 from module6.storage import Games
 
 
-def load_raw_and_save(alternate=False, num_games=16, only_successful=False, discrete=False, vectorlength=16):
+def load_raw_and_save(alternate=False, num_games=16, only_successful=False, vectorlength=16):
     """
     Loads raw data from game_data.txt, parses, transforms to alternate repr if set to True,
     then flattens the data, and pickles and saves the data to disk.
     """
 
-    # Set up logging
-    dictConfig(LOG_CONFIG)
     games = Games()
 
     # Use the following to parse 512 games from scratch, that have at least reached 2048,
@@ -37,110 +35,53 @@ def load_raw_and_save(alternate=False, num_games=16, only_successful=False, disc
     games.save()
 
 
-def load_train_and_run(vectorlength=16):
+def load_and_train(epochs=50, vectorlength=16):
     # Set up logging
     dictConfig(LOG_CONFIG)
     games = Games()
 
     # Use the following to load already parsed data
     games.load()
-    boards, labels = games.flatten(vectorlength=vectorlength)
+    games.flatten(vectorlength=vectorlength)
 
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 32, 4]
+    layer_structure = [vectorlength, 192, 128, 96, 4]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, softmax]
+    activation_functions = [rectify, rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.0008,
-        'num_labels': 4,
-        'normalize_max_value': 1,
-        'training_batch_size': 256,
-    }
-
-    # Create a network using the default parameters
-    a = ANN(layer_structure, activation_functions, config=cfg)
-    a.load_input_data(normalize=False, module6_file=True)
-
-    a.train(epochs=1000, include_test_set=False)
-
-
-def load_train_and_play_game(epochs=500, vectorlength=16):
-    # Set up logging
-    dictConfig(LOG_CONFIG)
-    games = Games()
-
-    # Use the following to load already parsed data
-    games.load()
-    boards, labels = games.flatten(vectorlength=vectorlength)
-
-    # Network structure
-    # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
-    # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 192, 128, 96, 64, 4]
-    # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, rectify, rectify, rectify, softmax]
-    # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
-    # Also we normalize the values. Don't know if it will affect anything,
-    # but not taking any chances.
-    cfg = {
-        'learning_rate': 0.000001,
+        'learning_rate': 0.00001,
         'num_labels': 4,
         'training_batch_size': 512,
     }
 
     # Create a network using the default parameters
-    a = ANN(layer_structure, activation_functions, config=cfg)
-    a.load_input_data(normalize=False, module6_file=True)
+    net = ANN(layer_structure, activation_functions, config=cfg)
+    net.load_input_data(normalize=False, module6_file=True)
 
-    a.train(epochs=epochs, include_test_set=False)
+    net.train(epochs=epochs, include_test_set=False)
 
-    BrowserController(sys.argv[1:], a, gui_update_interval=0, vectorlength=vectorlength)
+    return net
 
 
-def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
-    # Set up logging
-    dictConfig(LOG_CONFIG)
-    games = Games()
+def load_train_and_play_game(net, **kwargs):
+    BrowserController(sys.argv[1:], net, gui_update_interval=0, **kwargs)
 
-    # Use the following to load already parsed data
-    games.load()
-    boards, labels = games.flatten(vectorlength=vectorlength)
 
-    # Network structure
-    # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
-    # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 256, 256, 192, 64, 4]
-    # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, rectify, rectify, rectify, softmax]
-    # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
-    # Also we normalize the values. Don't know if it will affect anything,
-    # but not taking any chances.
-    cfg = {
-        'learning_rate': 0.0000001,
-        'num_labels': 4,
-        'training_batch_size': 512
-    }
-
-    # Create a network using the default parameters
-    a = ANN(layer_structure, activation_functions, config=cfg)
-    a.load_input_data(normalize=False, module6_file=True)
-
-    a.train(epochs=epochs, include_test_set=False)
-
+def load_train_and_store_stats(net, runs=10, **kwargs):
     results = []
     for z in range(runs):
-        j = JavaAdapter(a, stats_filename='random_statistics.txt')
+        j = JavaAdapter(net, stats_filename='random_statistics.txt')
         j.connect()
-        j.play(random=True, vectorlength=vectorlength)
+        j.play(random=True, **kwargs)
 
-        j = JavaAdapter(a, stats_filename='ann_statistics.txt')
+        j = JavaAdapter(net, stats_filename='ann_statistics.txt')
         j.connect()
-        j.play(random=False, vectorlength=vectorlength)
+        j.play(random=False, **kwargs)
 
         # According to the task description, the lists must be in order: random, ann
         result = welch(*create_run_lists())
@@ -154,10 +95,27 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
 
 
 if __name__ == "__main__":
+    # Set up logging
+    dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
-    # load_train_and_play_game(epochs=20, vectorlength=64)
+    # Setup
+    veclength = 48
+    # load_raw_and_save(alternate=False, only_successful=False, num_games=2048, vectorlength=veclength)
+    a = load_and_train(epochs=30, vectorlength=veclength)
 
-    # load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
+    # Start main loop
+    while True:
+        print('--- 2048 Neural Network --------------------')
+        print("1: Perform 2048 3x50 runs and Welch's 2-Test")
+        print("2: Play the 2048 game in the browser")
+        print("3: Exit")
+        print('')
+        choice = input('Enter your choice: ')
 
-    load_train_and_store_stats(epochs=20, vectorlength=48, runs=5)
+        if choice == '1':
+            load_train_and_store_stats(a, runs=3, vectorlength=veclength)
+        elif choice == '2':
+            load_train_and_play_game(a, vectorlength=veclength)
+        else:
+            sys.exit(0)

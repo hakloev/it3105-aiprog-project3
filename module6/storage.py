@@ -210,6 +210,13 @@ def transform(board):
     alternate = np.zeros((48,), dtype=float)
     b = np.array(board).reshape((4, 4))
 
+    moves = [
+        apply_move(b, 1),
+        apply_move(b, 2),
+        apply_move(b, 4)
+    ]
+
+    """
     mergecount = {
         0: 0,
         1: 0,
@@ -224,7 +231,6 @@ def transform(board):
             top = i - 4
             bottom = i + 4
 
-            """
             print("Y: %d X: %d I: %d" % (y, x, i))
             print("T: %d, R: %d, B: %d, L: %d" % (top, right, bottom, left))
             print(b)
@@ -233,7 +239,6 @@ def transform(board):
             print("RIGHT: %d" % (board[right] if right < 16 else -1))
             print("BOTTOM: %d" % (board[bottom] if bottom < 16 else -1))
             print("LEFT: %d" % (board[left] if left >= 0 else -1))
-            """
 
             # Calculates the sum of fractions for each neighboring pair (each direction) for all cells
             try:
@@ -254,18 +259,17 @@ def transform(board):
                 pass
             except ZeroDivisionError:
                 pass
+    """
 
     # Merge count number
-    for i in range(4):
-        alternate[32 + i] = mergecount[i]
+    # for i in range(4):
+    #     alternate[32 + i] = mergecount[i]
 
     # Number of free cells
-    for i in range(4):
-        alternate[36] = len(list(filter(lambda u: u == 0, board)))
-
-    # 
+    # alternate[36] = len(list(filter(lambda u: u == 0, board)))
 
     # Add the board itself and board times gradient
+    """
     for i, val in enumerate(board):
         if val:
             alternate[i] = ln(board[i])
@@ -273,6 +277,13 @@ def transform(board):
         else:
             alternate[i] = val
             alternate[16 + i] = val
+    """
+
+    for i, direction in enumerate(moves):
+        for z, val in enumerate(direction):
+            if val:
+                val = ln(val)
+            alternate[16 * i + z] = val
 
     return alternate
 
