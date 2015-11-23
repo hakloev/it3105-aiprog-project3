@@ -7,7 +7,7 @@ import sys
 from logging.config import dictConfig
 
 from config.configuration import LOG_CONFIG
-from module5.ann import ANN, rectify, softmax
+from module5.ann import ANN, rectify, softmax, ERROR_FUNCTIONS
 from module6.control.browser import BrowserController
 from module6.control.java_client_adapter import JavaAdapter
 from module6.demo.ai2048demo import welch
@@ -114,7 +114,7 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 192, 128, 96, 64, 4]
+    layer_structure = [vectorlength, 256, 256, 192, 64, 4]
     # Example: [rectify, rectify, softmax]
     activation_functions = [rectify, rectify, rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
@@ -123,7 +123,7 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
     cfg = {
         'learning_rate': 0.000001,
         'num_labels': 4,
-        'training_batch_size': 512,
+        'training_batch_size': 256
     }
 
     # Create a network using the default parameters
@@ -158,6 +158,6 @@ if __name__ == "__main__":
 
     # load_train_and_play_game(epochs=20, vectorlength=64)
 
-    load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
+    # load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
 
-    # load_train_and_store_stats(epochs=20, vectorlength=64, runs=5)
+    load_train_and_store_stats(epochs=1, vectorlength=64, runs=5)
