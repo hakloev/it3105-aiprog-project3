@@ -10,6 +10,7 @@ from __future__ import print_function
 import random
 import time
 import logging
+import sys
 
 from module6.storage import transform
 
@@ -54,7 +55,7 @@ class BrowserController(object):
         # self._log.debug("Best move is %i" % best_move[0])
 
         if self._vec_len != 16:
-            board = transform(board, discrete=True)
+            board = transform(board)
 
         best_move_all = self._NET.predict_all([board])  # Returns a list of all moves and their probability
         self._log.debug("All moves probability %s" % best_move_all)
@@ -86,7 +87,13 @@ class BrowserController(object):
                 move_no = 0
                 continue
             elif state == 'won':
-                time.sleep(0.75)
+                b = game_ctrl.get_board()
+                max_tile = max(max(l) for l in b)
+                if max_tile > 1024:
+                    cont = input('2048 reached! Continue? yes/no')
+                    if cont == 'no':
+                        sys.exit(0)
+                time.sleep(2)
                 game_ctrl.continue_game()
 
             move_no += 1

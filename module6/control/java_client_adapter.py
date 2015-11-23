@@ -7,6 +7,7 @@ import logging
 import os
 from random import randint
 import socket
+import sys
 
 from module6.control.browser import valid_move
 from module6.storage import transform
@@ -37,7 +38,7 @@ class JavaAdapter(object):
         self.sock.connect((host, port))
         self._log.info('Connected to %s:%d' % (host, port))
 
-    def play(self, runs=50, random=False, vectorlength=16):
+    def play(self, runs=50, random=False, vectorlength=16, stop_at_win=False, dirs=4):
         """
         Starts the main run loop for playing the game using the network.
         """
@@ -51,6 +52,8 @@ class JavaAdapter(object):
 
         for i in range(runs):
             last_board = None
+            last_board_raw = None
+            dircounter = 0
             while True:
                 board = self.sock.recv(RECV_BYTE_SIZE).decode('utf-8')
                 board = board.strip()
@@ -63,19 +66,35 @@ class JavaAdapter(object):
                     results.append(max_tile)
                     with open(__statistics_path__ + self.stats_filename, 'a') as f:
                         f.write("%d\n" % max_tile)
+
+                    if max_tile == 2048 and stop_at_win:
+                        cont = input('2048 reached! Continue? yes/no')
+                        if cont == 'yes':
+                            break
+                        else:
+                            return results
                     break
 
+                board_raw = board
                 board = self.transform_board(board)
                 last_board = board
 
                 if not random:
                     if vectorlength != 16:
-                        r = self.net.predict_all([transform(board[0], discrete=True)])
+                        r = self.net.predict_all([transform(board[0])])
                     else:
                         r = self.net.predict_all(board)
                     direction = determine_best_move(r[0], board[0].reshape(4, 4))
                 else:
                     direction = randint(0, 3)
+                    if dirs < 4:
+                        direction = randint(0, 2)
+                        if last_board_raw == board_raw:
+                            dircounter += 1
+                        if dircounter > 15:
+                            direction = 3
+                            dircounter = 0
+                        last_board_raw = board_raw
                 self.sock.send(bytes('%d\n' % direction, encoding='utf-8'))
 
         self.sock.close()

@@ -30,7 +30,7 @@ def load_raw_and_save(alternate=False, num_games=16, only_successful=False, disc
 
     games.parse_from_raw_game_data(num_games=num_games, only_successful=only_successful)
     if alternate:
-        games.transform_to_alternate_representation(discrete=discrete)
+        games.transform_to_alternate_representation()
     boards, labels = games.flatten(vectorlength=vectorlength)
     print('Total labels: %d' % len(labels))
     print('Total board states: %d' % len(boards))
@@ -81,16 +81,16 @@ def load_train_and_play_game(epochs=500, vectorlength=16):
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 128, 64, 4]
+    layer_structure = [vectorlength, 192, 128, 96, 64, 4]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, rectify, softmax]
+    activation_functions = [rectify, rectify, rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.001,
+        'learning_rate': 0.000001,
         'num_labels': 4,
-        'training_batch_size': 128,
+        'training_batch_size': 512,
     }
 
     # Create a network using the default parameters
@@ -114,14 +114,14 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
     # Network structure
     # Structure: [input_layer, hidden_layer, hidden_layer ... , output_layer]
     # Example: [784, 620, 100, 10]
-    layer_structure = [vectorlength, 128, 64, 4]
+    layer_structure = [vectorlength, 192, 128, 96, 64, 4]
     # Example: [rectify, rectify, softmax]
-    activation_functions = [rectify, rectify, rectify, softmax]
+    activation_functions = [rectify, rectify, rectify, rectify, rectify, softmax]
     # Remeber to change num_labels to 4, since we have Up, Right, Down, Left
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.00001,
+        'learning_rate': 0.000001,
         'num_labels': 4,
         'training_batch_size': 512,
     }
@@ -144,23 +144,20 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
 
         # According to the task description, the lists must be in order: random, ann
         result = welch(*create_run_lists())
+        print('Result run %d:' % z)
         print('%s' % result)
         results.append(result)
+
+    print('--- Summary (%d runs) ---' % len(results))
+    for r in results:
+        print(r)
 
 
 if __name__ == "__main__":
     log = logging.getLogger(__name__)
 
-    """
-    load_train_and_store_stats(random=False, epochs=500)
-    load_train_and_store_stats(random=True, epochs=1)
-    # According to the task description, the lists must be in order: random, ann
-    result = welch(*create_run_lists())
-    print('%s' % result)
-    """
-    print(create_run_lists())
-    # load_train_and_play_game(epochs=100, vectorlength=16)
+    # load_train_and_play_game(epochs=20, vectorlength=64)
 
-    # load_raw_and_save(discrete=True, only_successful=False, num_games=1024, vectorlength=16)
+    load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
 
-    # load_train_and_store_stats(epochs=2, vectorlength=16, runs=20)
+    # load_train_and_store_stats(epochs=20, vectorlength=64, runs=5)
