@@ -83,9 +83,7 @@ class BrowserController(object):
             time.sleep(self._GUI_UPDATE_INTERVAL)
             state = game_ctrl.get_status()
             if state == 'ended':
-                game_ctrl.restart_game()
-                move_no = 0
-                continue
+                break
             elif state == 'won':
                 b = game_ctrl.get_board()
                 max_tile = max(max(l) for l in b)
