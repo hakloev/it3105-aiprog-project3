@@ -207,7 +207,7 @@ def transform(board):
         1, 2, 8, 16
     ]
 
-    alternate = np.zeros((64,), dtype=float)
+    alternate = np.zeros((48,), dtype=float)
     b = np.array(board).reshape((4, 4))
 
     mergecount = {
@@ -218,38 +218,60 @@ def transform(board):
     }
     for y in range(4):
         for x in range(4):
-            i = y * 4 + x - 1
-            left = y * 4 + x - 1
-            right = y * 4 + x + 1
-            top = y * 4 + x - 4
-            bottom = y * 4 + x + 4
-            directions = [left, bottom, right, top]
-            # Calculates the sum of fractions for each neighboring pair (each direction) for all cells
-            for z, direction in enumerate(directions):
-                try:
-                    m_index = min(board[i], board[direction]) / max(board[i], board[direction])
-                    # alternate[16 + i] += min(board[i], board[direction]) / max(board[i], board[direction])
-                    if m_index == 1:
-                        mergecount[z] += 1
-                except IndexError:
-                    pass
-                except ZeroDivisionError:
-                    pass
+            i = y * 4 + x
+            left = i - 1
+            right = i + 1
+            top = i - 4
+            bottom = i + 4
 
+            """
+            print("Y: %d X: %d I: %d" % (y, x, i))
+            print("T: %d, R: %d, B: %d, L: %d" % (top, right, bottom, left))
+            print(b)
+            print("Board to reshape correct? %s" % (board[i] == b[y][x]))
+            print("TOP: %d" % (board[top] if top >= 0 else -1))
+            print("RIGHT: %d" % (board[right] if right < 16 else -1))
+            print("BOTTOM: %d" % (board[bottom] if bottom < 16 else -1))
+            print("LEFT: %d" % (board[left] if left >= 0 else -1))
+            """
+
+            # Calculates the sum of fractions for each neighboring pair (each direction) for all cells
+            try:
+                m_top = min(b[y][x], b[y-1][x]) / max(b[y][x], b[y-1][x])
+                m_right = min(b[y][x], b[y][x+1]) / max(b[y][x], b[y][x+1])
+                m_bottom = min(b[y][x], b[y+1][x]) / max(b[y][x], b[y+1][x])
+                m_left = min(b[y][x], b[y][x-1]) / max(b[y][x], b[y][x-1])
+
+                if m_top == 1:
+                    mergecount[0] += 1
+                if m_right == 1:
+                    mergecount[1] += 1
+                if m_bottom == 1:
+                    mergecount[2] += 1
+                if m_left == 1:
+                    mergecount[3] += 1
+            except IndexError:
+                pass
+            except ZeroDivisionError:
+                pass
+
+    # Merge count number
     for i in range(4):
         alternate[32 + i] = mergecount[i]
-        alternate[32 + i + 1] = mergecount[i]
-        alternate[32 + i + 2] = mergecount[i]
-        alternate[32 + i + 3] = mergecount[i]
 
+    # Number of free cells
+    for i in range(4):
+        alternate[36] = len(list(filter(lambda u: u == 0, board)))
+
+    # 
+
+    # Add the board itself and board times gradient
     for i, val in enumerate(board):
         if val:
             alternate[i] = ln(board[i])
-            alternate[48 + i] = ln(gradient[i])
-            alternate[16 + i] = ln(board[i] * gradient[i])
+            alternate[16 + i] = ln(gradient[i] * board[i])
         else:
             alternate[i] = val
-            alternate[48 + i] = val
             alternate[16 + i] = val
 
     return alternate
