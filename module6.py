@@ -121,9 +121,9 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
     # Also we normalize the values. Don't know if it will affect anything,
     # but not taking any chances.
     cfg = {
-        'learning_rate': 0.000001,
+        'learning_rate': 0.0000001,
         'num_labels': 4,
-        'training_batch_size': 256
+        'training_batch_size': 512
     }
 
     # Create a network using the default parameters
@@ -160,4 +160,4 @@ if __name__ == "__main__":
 
     # load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
 
-    load_train_and_store_stats(epochs=1, vectorlength=64, runs=5)
+    load_train_and_store_stats(epochs=20, vectorlength=48, runs=5)
