@@ -209,24 +209,48 @@ def transform(board):
 
     alternate = np.zeros((64,), dtype=float)
     b = np.array(board).reshape((4, 4))
-    moved_states = [
-        apply_move(b, 1),
-        apply_move(b, 2),
-        apply_move(b, 4),
-    ]
 
-    for i, state in enumerate(moved_states):
-        for x, val in enumerate(state):
-            if not val:
-                alternate[i * 16 + x] = 0
-            else:
-                alternate[i * 16 + x] = ln(val * gradient[x])
+    mergecount = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0,
+    }
+    for y in range(4):
+        for x in range(4):
+            i = y * 4 + x - 1
+            left = y * 4 + x - 1
+            right = y * 4 + x + 1
+            top = y * 4 + x - 4
+            bottom = y * 4 + x + 4
+            directions = [left, bottom, right, top]
+            # Calculates the sum of fractions for each neighboring pair (each direction) for all cells
+            for z, direction in enumerate(directions):
+                try:
+                    m_index = min(board[i], board[direction]) / max(board[i], board[direction])
+                    # alternate[16 + i] += min(board[i], board[direction]) / max(board[i], board[direction])
+                    if m_index == 1:
+                        mergecount[z] += 1
+                except IndexError:
+                    pass
+                except ZeroDivisionError:
+                    pass
+
+    for i in range(4):
+        alternate[32 + i] = mergecount[i]
+        alternate[32 + i + 1] = mergecount[i]
+        alternate[32 + i + 2] = mergecount[i]
+        alternate[32 + i + 3] = mergecount[i]
 
     for i, val in enumerate(board):
         if val:
-            alternate[48 + i] = ln(val * gradient[i])
+            alternate[i] = ln(board[i])
+            alternate[48 + i] = ln(gradient[i])
+            alternate[16 + i] = ln(board[i] * gradient[i])
         else:
+            alternate[i] = val
             alternate[48 + i] = val
+            alternate[16 + i] = val
 
     return alternate
 

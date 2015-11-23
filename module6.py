@@ -144,9 +144,11 @@ def load_train_and_store_stats(epochs=1000, vectorlength=16, runs=10):
 
         # According to the task description, the lists must be in order: random, ann
         result = welch(*create_run_lists())
+        print('Result run %d:' % z)
         print('%s' % result)
         results.append(result)
 
+    print('--- Summary (%d runs) ---' % len(results))
     for r in results:
         print(r)
 
@@ -156,10 +158,6 @@ if __name__ == "__main__":
 
     # load_train_and_play_game(epochs=20, vectorlength=64)
 
-    # load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
+    load_raw_and_save(alternate=True, only_successful=False, num_games=2048, vectorlength=64)
 
-    load_train_and_store_stats(epochs=5, vectorlength=64, runs=5)
-    load_train_and_store_stats(epochs=10, vectorlength=64, runs=5)
-    load_train_and_store_stats(epochs=15, vectorlength=64, runs=5)
-    load_train_and_store_stats(epochs=20, vectorlength=64, runs=5)
-    load_train_and_store_stats(epochs=25, vectorlength=64, runs=5)
+    # load_train_and_store_stats(epochs=20, vectorlength=64, runs=5)
