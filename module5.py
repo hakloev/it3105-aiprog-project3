@@ -10,7 +10,7 @@ from config.configuration import LOG_CONFIG
 from module5.ann import ANN, rectify, softmax, sigmoid, softplus, ERROR_FUNCTIONS
 from module5.mnist import mnist_basics
 from module5.mnist.mnist_basics import __mnist_path__
-# from module5.mnist import mnistdemo
+from module5.mnist import mnistdemo2
 
 
 DO_BLIND_TEST = False
@@ -111,8 +111,13 @@ def do_demo_procedure(r, ann_config=2, epochs=20, d=__mnist_path__):
     ann = get_ann_network_from_config(ANN_CONFIGURATIONS[ann_config])
     ann.load_input_data(normalize=True)
     ann.train(epochs)
-    mnist_basics.minor_demo(ann)
-    # mnistdemo.major_demo(ann,r,d)
+    print('------- READY TO RUN DEMO ------')
+    print('1: Run demo')
+    print('2: Exit')
+    choice = input('Enter command: ')
+    if choice == '1':
+        # mnist_basics.minor_demo(ann)
+        mnistdemo2.major_demo(ann, r, d)
 
 
 if __name__ == "__main__":
@@ -121,7 +126,7 @@ if __name__ == "__main__":
     dictConfig(LOG_CONFIG)
     log = logging.getLogger(__name__)
 
-    do_demo_procedure(8, ann_config=2, epochs=25)
+    do_demo_procedure(63, ann_config=2, epochs=25, d=__mnist_path__ + 'demo/')
 
     """
     # Do analysis on all but the last ann configuration
